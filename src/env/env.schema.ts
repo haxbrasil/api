@@ -68,11 +68,11 @@ export class EnvSchema {
 
   @IsString()
   @IsNotEmpty()
-  FILE_STORAGE_BUCKET!: string;
+  FILE_STORAGE_RECS_BUCKET!: string;
 
   @IsString()
   @IsNotEmpty()
-  FILE_STORAGE_PUBLIC_BASE_URL!: string;
+  FILE_STORAGE_RECS_PUBLIC_BASE_URL!: string;
 
   @IsOptional()
   @IsBoolean()

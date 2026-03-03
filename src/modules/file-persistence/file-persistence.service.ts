@@ -17,9 +17,13 @@ export class FilePersistenceService {
     @Inject('S3_CLIENT') private readonly client: S3Client,
     config: ConfigService<EnvSchema, true>,
   ) {
-    this.bucket = config.getOrThrow('FILE_STORAGE_BUCKET', { infer: true });
+    this.bucket = config.getOrThrow('FILE_STORAGE_RECS_BUCKET', {
+      infer: true,
+    });
     this.publicBaseUrl = normalizePublicBaseUrl(
-      config.getOrThrow('FILE_STORAGE_PUBLIC_BASE_URL', { infer: true }),
+      config.getOrThrow('FILE_STORAGE_RECS_PUBLIC_BASE_URL', {
+        infer: true,
+      }),
     );
   }
 
