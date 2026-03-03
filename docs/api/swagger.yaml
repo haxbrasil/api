@@ -52,7 +52,7 @@ paths:
                   - message
       summary: Create user
       tags: &a1
-        - users
+        - 👤 Users
     get:
       description: Lists users with pagination and optional username filter.
       operationId: UsersController_list
@@ -337,7 +337,7 @@ paths:
                   - message
       summary: Upload recording
       tags: &a2
-        - recordings
+        - 📽️ Recordings
     get:
       description: Lists recording codes with pagination for the authenticated tenant.
       operationId: RecordingsController_list
@@ -437,7 +437,11 @@ info:
   description: ''
   version: '1.0'
   contact: {}
-tags: []
+tags:
+  - name: 👤 Users
+    description: Endpoints related to user management and authentication
+  - name: 📽️ Recordings
+    description: Endpoints related to recording management
 servers: []
 components:
   securitySchemes:
