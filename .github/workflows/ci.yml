@@ -47,6 +47,12 @@ jobs:
           JWT_ISS: haxbrasil-api
           JWT_AUD: haxbrasil-services
           JWT_EXP: 15m
+          FILE_STORAGE_ENDPOINT: http://localhost:9000
+          FILE_STORAGE_REGION: auto
+          FILE_STORAGE_ACCESS_KEY_ID: ci-key
+          FILE_STORAGE_SECRET_ACCESS_KEY: ci-secret
+          FILE_STORAGE_RECS_BUCKET: ci-recs
+          FILE_STORAGE_RECS_PUBLIC_BASE_URL: http://localhost:9000/ci-recs
 
       - name: Unit tests
         run: pnpm exec jest --passWithNoTests
