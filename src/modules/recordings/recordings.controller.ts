@@ -33,6 +33,7 @@ import {
   apiErrorPayload,
   apiErrorResponse,
 } from '../../common/errors/api-error-response.util';
+import { ApiTag } from '../../common/swagger/api-tag.enum';
 import { Tenant } from '../auth/decorators/tenant.decorator';
 import { ListRecordingsQueryDto } from './dtos/list-recordings-query.dto';
 import { RecordingResponseDto } from './dtos/recording-response.dto';
@@ -41,7 +42,7 @@ import { RecordingsService } from './recordings.service';
 
 export const MAX_RECORDING_SIZE_BYTES = 5 * 1024 * 1024;
 
-@ApiTags('recordings')
+@ApiTags(ApiTag.RECORDINGS)
 @Controller('recs')
 export class RecordingsController {
   constructor(private readonly service: RecordingsService) {}

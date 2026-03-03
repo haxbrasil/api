@@ -1,4 +1,5 @@
 import { DocumentBuilder } from '@nestjs/swagger';
+import { ApiTag } from 'src/common/swagger/api-tag.enum';
 
 export const SWAGGER_PATH = 'api';
 
@@ -15,5 +16,10 @@ export function buildSwaggerConfig() {
       'bearer',
     )
     .addSecurityRequirements('bearer')
+    .addTag(
+      ApiTag.USERS,
+      'Endpoints related to user management and authentication',
+    )
+    .addTag(ApiTag.RECORDINGS, 'Endpoints related to recording management')
     .build();
 }

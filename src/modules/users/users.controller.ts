@@ -35,8 +35,9 @@ import {
   apiErrorPayload,
   apiErrorResponse,
 } from '../../common/errors/api-error-response.util';
+import { ApiTag } from '../../common/swagger/api-tag.enum';
 
-@ApiTags('users')
+@ApiTags(ApiTag.USERS)
 @Controller('users')
 export class UsersController {
   constructor(private readonly service: UsersService) {}
