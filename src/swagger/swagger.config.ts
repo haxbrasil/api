@@ -1,5 +1,5 @@
 import { DocumentBuilder } from '@nestjs/swagger';
-import { ApiTag } from 'src/common/swagger/api-tag.enum';
+import { ApiTag } from '../common/swagger/api-tag.enum';
 
 export const SWAGGER_PATH = 'api';
 
