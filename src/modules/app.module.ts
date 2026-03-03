@@ -6,6 +6,8 @@ import { validateEnv } from '../env/env.schema';
 import { AuthModule } from './auth/auth.module';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/auth.guard';
+import { FilePersistenceModule } from './file-persistence/file-persistence.module';
+import { RecordingsModule } from './recordings/recordings.module';
 
 @Module({
   imports: [
@@ -15,7 +17,9 @@ import { JwtAuthGuard } from './auth/auth.guard';
     }),
     AuthModule,
     DatabaseModule,
+    FilePersistenceModule,
     UsersModule,
+    RecordingsModule,
   ],
   providers: [
     {

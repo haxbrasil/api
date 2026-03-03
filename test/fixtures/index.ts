@@ -6,3 +6,4 @@ export {
   userIdentityPath,
   userIdPath,
 } from './users.fixture';
+export { recordingFixtureBytes } from './recordings.fixture';

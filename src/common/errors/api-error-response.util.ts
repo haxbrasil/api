@@ -20,6 +20,14 @@ export const API_ERRORS = {
     code: ApiError.USER_NOT_FOUND,
     message: 'User not found',
   },
+  RECORDING_INVALID: {
+    code: ApiError.RECORDING_INVALID,
+    message: 'Invalid recording file',
+  },
+  RECORDING_NOT_FOUND: {
+    code: ApiError.RECORDING_NOT_FOUND,
+    message: 'Recording not found',
+  },
 } as const satisfies Record<string, ApiErrorDescriptor>;
 
 export function apiErrorPayload(error: ApiErrorDescriptor): {

@@ -1,8 +1,10 @@
 import {
+  IsBoolean,
   IsEnum,
   IsNumber,
   IsString,
   IsNotEmpty,
+  IsOptional,
   validateSync,
 } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
@@ -47,6 +49,34 @@ export class EnvSchema {
 
   @IsNumber()
   PORT!: number;
+
+  @IsString()
+  @IsNotEmpty()
+  FILE_STORAGE_ENDPOINT!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  FILE_STORAGE_REGION!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  FILE_STORAGE_ACCESS_KEY_ID!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  FILE_STORAGE_SECRET_ACCESS_KEY!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  FILE_STORAGE_BUCKET!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  FILE_STORAGE_PUBLIC_BASE_URL!: string;
+
+  @IsOptional()
+  @IsBoolean()
+  FILE_STORAGE_FORCE_PATH_STYLE: boolean = false;
 }
 
 export function validateEnv(config: Record<string, unknown>): EnvSchema {

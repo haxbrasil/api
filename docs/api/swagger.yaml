@@ -279,6 +279,159 @@ paths:
                   - message
       summary: Confirm user credentials
       tags: *a1
+  /recs:
+    post:
+      description: Uploads a HaxBall recording and stores it on file persistence.
+      operationId: RecordingsController_create
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - recording
+              properties:
+                recording:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingResponseDto'
+        '400':
+          description: Invalid recording file
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: recording_invalid
+                  message:
+                    type: string
+                    example: Invalid recording file
+                required:
+                  - code
+                  - message
+        '500':
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: persistence_error
+                  message:
+                    type: string
+                    example: Unexpected error
+                required:
+                  - code
+                  - message
+      summary: Upload recording
+      tags: &a2
+        - recordings
+    get:
+      description: Lists recording codes with pagination for the authenticated tenant.
+      operationId: RecordingsController_list
+      parameters:
+        - name: page
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            default: 1
+            example: 1
+            type: number
+        - name: pageSize
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            maximum: 100
+            default: 20
+            example: 20
+            type: number
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingsPaginatedResponseDto'
+        '500':
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: persistence_error
+                  message:
+                    type: string
+                    example: Unexpected error
+                required:
+                  - code
+                  - message
+      summary: List recording codes
+      tags: *a2
+  /recs/{code}:
+    get:
+      description: Finds a recording by code and redirects to the object URL.
+      operationId: RecordingsController_redirectByCode
+      parameters:
+        - name: code
+          required: true
+          in: path
+          schema:
+            example: A1B2C3
+            type: string
+      responses:
+        '302':
+          description: Redirects to recording object URL.
+        '404':
+          description: Recording not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: recording_not_found
+                  message:
+                    type: string
+                    example: Recording not found
+                required:
+                  - code
+                  - message
+        '500':
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: persistence_error
+                  message:
+                    type: string
+                    example: Unexpected error
+                required:
+                  - code
+                  - message
+      summary: Redirect to recording URL
+      tags: *a2
 info:
   title: Hax Brasil API
   description: ''
@@ -314,7 +467,7 @@ components:
           maxLength: 20
         role:
           type: string
-          enum: &a2
+          enum: &a3
             - admin
             - mod
             - default
@@ -336,7 +489,7 @@ components:
           type: string
         role:
           type: string
-          enum: *a2
+          enum: *a3
         created_at:
           type: string
           format: date-time
@@ -387,7 +540,7 @@ components:
           maxLength: 20
         role:
           type: string
-          enum: *a2
+          enum: *a3
           example: mod
     ConfirmUserDto:
       type: object
@@ -410,5 +563,45 @@ components:
       required:
         - is_correct
         - provider_user_id
+    RecordingResponseDto:
+      type: object
+      properties:
+        id:
+          type: string
+        code:
+          type: string
+        recording_uuid:
+          type: string
+        url:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - code
+        - recording_uuid
+        - url
+        - created_at
+    RecordingCodeResponseDto:
+      type: object
+      properties:
+        code:
+          type: string
+          example: A1B2C3
+      required:
+        - code
+    RecordingsPaginatedResponseDto:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecordingCodeResponseDto'
+        page_info:
+          $ref: '#/components/schemas/PageInfoDto'
+      required:
+        - items
+        - page_info
 security:
   - bearer: []

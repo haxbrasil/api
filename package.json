@@ -29,6 +29,8 @@
     "test:e2e:docker:down": "docker compose -f ./docker-compose.e2e.yml down -v"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1000.0",
+    "@hax-brasil/replay-decoder": "^1.0.1",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.3",
     "@nestjs/core": "^11.0.1",
@@ -56,6 +58,7 @@
     "@swc/core": "^1.10.7",
     "@types/express": "^5.0.0",
     "@types/jest": "^29.5.14",
+    "@types/multer": "^2.0.0",
     "@types/node": "^22.10.7",
     "@types/passport-jwt": "^4.0.1",
     "dbmate": "^2.31.0",

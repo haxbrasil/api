@@ -20,6 +20,18 @@ export async function get(path: string, token?: string): Promise<Response> {
   });
 }
 
+export async function getNoRedirect(
+  path: string,
+  token?: string,
+): Promise<Response> {
+  const { baseUrl } = getE2ERuntime();
+
+  return fetch(`${baseUrl}${resolvePath(path)}`, {
+    headers: authHeaders(token),
+    redirect: 'manual',
+  });
+}
+
 export async function post(
   path: string,
   payload: unknown,
@@ -49,6 +61,20 @@ export async function put(
       ...authHeaders(token),
     },
     body: JSON.stringify(payload),
+  });
+}
+
+export async function postMultipart(
+  path: string,
+  payload: FormData,
+  token?: string,
+): Promise<Response> {
+  const { baseUrl } = getE2ERuntime();
+
+  return fetch(`${baseUrl}${resolvePath(path)}`, {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: payload,
   });
 }
 
