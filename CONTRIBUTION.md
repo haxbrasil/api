@@ -24,6 +24,7 @@ Pull requests, issues, and suggestions are welcome. This document defines the ex
 ### 4. Implement
 
 - Keep your branch updated with `main`.
+- Follow `docs/contribution/code-style-guide.md` as the default coding standard.
 - Follow project conventions (formatting, naming, organization, tests).
 - Avoid out-of-scope refactors.
 - Update documentation when behavior changes.
