@@ -1,8 +1,8 @@
 import * as crypto from 'node:crypto';
 import { Injectable } from '@nestjs/common';
 import { err, ok, Result } from 'neverthrow';
-import { Page } from '../../common/pagination/types/page.type';
-import { paginate } from '../../common/pagination/utils/page.util';
+import { Page } from '../../common/api/pagination/types/page.type';
+import { paginate } from '../../common/api/pagination/utils/page.util';
 import { RoomEventRow } from '../database/database';
 import { PersistenceError } from '../database/database.error';
 import { RoomsRepository } from '../rooms/rooms.repository';

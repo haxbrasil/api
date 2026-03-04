@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { err, ok, Result } from 'neverthrow';
 import sql, { join, Sql } from 'sql-template-tag';
-import { MysqlError } from '../../common/errors/mysql-error.enum';
-import { getPageWindow } from '../../common/pagination/utils/page.util';
+import { MysqlError } from '../../common/persistence/errors/mysql-error.enum';
+import { getPageWindow } from '../../common/api/pagination/utils/page.util';
 import { UserPublicRow, UserCredentialsRow } from '../database/database';
 import { DatabaseService } from '../database/database.service';
 import { CreateUserDto } from './dtos/create-user.dto';

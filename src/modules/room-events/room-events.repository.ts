@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { err, ok, Result } from 'neverthrow';
 import sql from 'sql-template-tag';
-import { getPageWindow } from '../../common/pagination/utils/page.util';
-import { parseJsonValue } from '../../common/utils/json-value.util';
-import { toJsonSqlColumn } from '../../common/utils/json-sql-column.util';
-import { mapRecordFields } from '../../common/utils/record-field-mapper.util';
+import { getPageWindow } from '../../common/api/pagination/utils/page.util';
+import { parseJsonValue } from '../../common/data/json-value.util';
+import { toJsonSqlColumn } from '../../common/persistence/json-sql-column.util';
+import { mapRecordFields } from '../../common/data/record-field-mapper.util';
 import { DeferredRoomEventRow, RoomEventRow } from '../database/database';
 import { PersistenceError } from '../database/database.error';
 import { DatabaseService } from '../database/database.service';

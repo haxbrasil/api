@@ -10,7 +10,7 @@ import { FilePersistenceModule } from './file-persistence/file-persistence.modul
 import { RecordingsModule } from './recordings/recordings.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { BullModule } from '@nestjs/bullmq';
-import { buildRedisConnectionFromUrl } from '../common/utils/redis-connection.util';
+import { buildRedisConnectionFromUrl } from '../common/queue/redis-connection.util';
 import { RoomsModule } from './rooms/rooms.module';
 import { RoomEventsModule } from './room-events/room-events.module';
 import { RoomJobsModule } from './room-jobs/room-jobs.module';

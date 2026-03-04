@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { err, ok, Result } from 'neverthrow';
 import sql, { join, Sql } from 'sql-template-tag';
-import { getPageWindow } from '../../common/pagination/utils/page.util';
-import { toBoolean, toNullableBoolean } from '../../common/utils/boolean.util';
-import { toNullableJsonSqlColumn } from '../../common/utils/json-sql-column.util';
-import { mapRecordFields } from '../../common/utils/record-field-mapper.util';
+import { getPageWindow } from '../../common/api/pagination/utils/page.util';
+import { toBoolean, toNullableBoolean } from '../../common/data/boolean.util';
+import { toNullableJsonSqlColumn } from '../../common/persistence/json-sql-column.util';
+import { mapRecordFields } from '../../common/data/record-field-mapper.util';
 import { RoomRow } from '../database/database';
 import { PersistenceError } from '../database/database.error';
 import { DatabaseService } from '../database/database.service';

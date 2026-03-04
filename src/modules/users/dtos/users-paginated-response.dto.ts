@@ -1,4 +1,4 @@
-import { PaginationDto } from '../../../common/pagination/dtos/pagination.dto';
+import { PaginationDto } from '../../../common/api/pagination/dtos/pagination.dto';
 import { UserPublicRow } from '../../database/database';
 import { UserResponseDto } from './user-response.dto';
 

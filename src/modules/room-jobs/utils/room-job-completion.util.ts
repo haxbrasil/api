@@ -1,7 +1,7 @@
 import {
   getOptionalStringField,
   asObjectRecord,
-} from '../../../common/utils/unknown-value.util';
+} from '../../../common/data/unknown-value.util';
 import { RoomJobCompletion, RoomJobHttpResult } from '../types/room-job.type';
 
 function parseFailedCompletion(

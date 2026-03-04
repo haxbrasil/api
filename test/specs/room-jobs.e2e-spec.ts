@@ -1,5 +1,5 @@
 import { Queue, Worker } from 'bullmq';
-import { buildRedisConnectionFromUrl } from '../../src/common/utils/redis-connection.util';
+import { buildRedisConnectionFromUrl } from '../../src/common/queue/redis-connection.util';
 import {
   ROOM_JOBS_QUEUE,
   RoomJobCompletion,
@@ -209,7 +209,7 @@ describe('Room Jobs (e2e)', () => {
       {
         room_type: 'open-success',
         room_properties: {
-          room_name: 'BFL Test Room',
+          room_name: 'Hax Brasil Test Room',
         },
         token: 'headless-token-123',
       },
@@ -224,7 +224,7 @@ describe('Room Jobs (e2e)', () => {
           room_type: 'open-success',
           token: 'headless-token-123',
           room_properties: {
-            room_name: 'BFL Test Room',
+            room_name: 'Hax Brasil Test Room',
           },
         }),
       ]),

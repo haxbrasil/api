@@ -2,8 +2,8 @@ import { Inject, Injectable, OnModuleDestroy } from '@nestjs/common';
 import { err, ok, Result } from 'neverthrow';
 import { Pool } from 'mysql2/promise';
 import sql, { Sql } from 'sql-template-tag';
-import { SnakeCasedProperties } from '../../common/types/case-conversion.type';
-import { mapSnakeToCamel } from '../../common/utils/snake-to-camel.util';
+import { SnakeCasedProperties } from '../../common/persistence/types/case-conversion.type';
+import { mapSnakeToCamel } from '../../common/persistence/snake-to-camel.util';
 import { PersistenceError } from './database.error';
 
 @Injectable()

@@ -37,7 +37,7 @@ Each feature under `src/modules/<feature>` should follow:
 - `types/` for shareable contracts in that module.
 - `utils/` for small pure helper functions.
 
-If a type or utility is shared by multiple modules, move it to `src/common/types` or `src/common/utils`.
+If a type or utility is shared by multiple modules, move it to the proper `src/common/<domain>` area (for example: `src/common/api`, `src/common/persistence`, `src/common/data`, `src/common/queue`).
 
 ### File ownership and folder discipline
 
@@ -148,8 +148,8 @@ Assertions are for invariants and programmer errors only. Example: row must exis
 ### Controller contracts
 
 - Keep `@nestjs/swagger` decorators aligned with runtime behavior.
-- Use shared API tags from `src/common/swagger/api-tag.enum.ts`.
-- Use shared API error helpers from `src/common/errors/api-error-response.util.ts`.
+- Use shared API tags from `src/common/api/swagger/api-tag.enum.ts`.
+- Use shared API error helpers from `src/common/api/errors/api-error-response.util.ts`.
 
 ### Pagination
 
@@ -192,6 +192,7 @@ Use the standard response shape:
 - Keep module-local contracts in module `types/`.
 - Keep reusable pure helpers in module `utils/`.
 - Promote to `src/common/*` only when shared across modules.
+- Organize `src/common` by domain (for example: `api`, `persistence`, `data`, `queue`) instead of by artifact kind.
 - Avoid “misc” files that mix unrelated helpers.
 
 ### Type placement rules
@@ -257,7 +258,7 @@ Before requesting review, verify:
 - Layering is respected (controller/service/repository/module).
 - Expected failures use typed `Result` errors.
 - Invariants are asserted only where appropriate.
-- Types/helpers were placed in correct `types/` and `utils/` folders.
+- Types/helpers were placed in correct module `types/` and `utils/` folders or in the appropriate `src/common/<domain>` area.
 - Swagger decorators and DTOs match runtime behavior.
 - SQL is tenant-safe and parameterized.
 - Tests cover happy path and relevant failure modes.

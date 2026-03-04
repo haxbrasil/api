@@ -1,4 +1,4 @@
-import { PaginationDto } from '../../../common/pagination/dtos/pagination.dto';
+import { PaginationDto } from '../../../common/api/pagination/dtos/pagination.dto';
 import { RoomEventRow } from '../../database/database';
 import { RoomEventName } from '../types/room-event-name.type';
 import { RoomEventResponseDto } from './room-event-response.dto';

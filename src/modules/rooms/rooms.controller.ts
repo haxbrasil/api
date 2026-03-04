@@ -26,8 +26,8 @@ import {
   API_ERRORS,
   apiErrorPayload,
   apiErrorResponse,
-} from '../../common/errors/api-error-response.util';
-import { ApiTag } from '../../common/swagger/api-tag.enum';
+} from '../../common/api/errors/api-error-response.util';
+import { ApiTag } from '../../common/api/swagger/api-tag.enum';
 import { Tenant } from '../auth/decorators/tenant.decorator';
 import { CreateRoomDto } from './dtos/create-room.dto';
 import { ListRoomsQueryDto } from './dtos/list-rooms-query.dto';

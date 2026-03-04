@@ -20,8 +20,8 @@ import {
   API_ERRORS,
   apiErrorPayload,
   apiErrorResponse,
-} from '../../common/errors/api-error-response.util';
-import { ApiTag } from '../../common/swagger/api-tag.enum';
+} from '../../common/api/errors/api-error-response.util';
+import { ApiTag } from '../../common/api/swagger/api-tag.enum';
 import { Tenant } from '../auth/decorators/tenant.decorator';
 import { CreateRoomJobDto } from './dtos/create-room-job.dto';
 import { RoomJobFailedResponseDto } from './dtos/room-job-failed-response.dto';

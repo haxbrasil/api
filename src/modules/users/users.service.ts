@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { err, ok, Result } from 'neverthrow';
 import { ok as assert } from 'node:assert/strict';
-import { Page } from '../../common/pagination/types/page.type';
-import { paginate } from '../../common/pagination/utils/page.util';
+import { Page } from '../../common/api/pagination/types/page.type';
+import { paginate } from '../../common/api/pagination/utils/page.util';
 import { UserPublicRow } from '../database/database';
 import { PersistenceError } from '../database/database.error';
 import { ConfirmUserDto } from './dtos/confirm-user.dto';

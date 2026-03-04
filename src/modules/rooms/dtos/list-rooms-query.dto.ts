@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsBoolean, IsOptional, IsString, Length } from 'class-validator';
-import { SnakePagePaginationQueryDto } from '../../../common/pagination/dtos/snake-page-pagination-query.dto';
+import { SnakePagePaginationQueryDto } from '../../../common/api/pagination/dtos/snake-page-pagination-query.dto';
 
 export class ListRoomsQueryDto extends SnakePagePaginationQueryDto {
   @ApiPropertyOptional({

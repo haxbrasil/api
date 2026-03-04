@@ -26,8 +26,8 @@ import {
   API_ERRORS,
   apiErrorPayload,
   apiErrorResponse,
-} from '../../common/errors/api-error-response.util';
-import { ApiTag } from '../../common/swagger/api-tag.enum';
+} from '../../common/api/errors/api-error-response.util';
+import { ApiTag } from '../../common/api/swagger/api-tag.enum';
 import { Tenant } from '../auth/decorators/tenant.decorator';
 import { CreateRoomEventDto } from './dtos/create-room-event.dto';
 import { DeferredRoomEventResponseDto } from './dtos/deferred-room-event-response.dto';

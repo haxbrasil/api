@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { err, ok, Result } from 'neverthrow';
 import { ok as assert } from 'node:assert/strict';
-import { MysqlError } from '../../common/errors/mysql-error.enum';
-import { getPageWindow } from '../../common/pagination/utils/page.util';
+import { MysqlError } from '../../common/persistence/errors/mysql-error.enum';
+import { getPageWindow } from '../../common/api/pagination/utils/page.util';
 import { RecordingCodeRow, RecordingRow } from '../database/database';
 import { PersistenceError } from '../database/database.error';
 import { DatabaseService } from '../database/database.service';

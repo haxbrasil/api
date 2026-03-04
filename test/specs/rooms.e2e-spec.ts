@@ -20,7 +20,7 @@ describe('Rooms (e2e)', () => {
       '/rooms',
       {
         invite: 'DDWvwykDyiI',
-        name: 'BFL #1',
+        name: 'Hax Brasil #1',
       },
       tenant.token,
     );
@@ -35,7 +35,7 @@ describe('Rooms (e2e)', () => {
     );
     expect(payload).toMatchObject({
       invite: 'DDWvwykDyiI',
-      name: 'BFL #1',
+      name: 'Hax Brasil #1',
       active: true,
     });
   });

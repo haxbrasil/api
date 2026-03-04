@@ -34,8 +34,8 @@ import {
   API_ERRORS,
   apiErrorPayload,
   apiErrorResponse,
-} from '../../common/errors/api-error-response.util';
-import { ApiTag } from '../../common/swagger/api-tag.enum';
+} from '../../common/api/errors/api-error-response.util';
+import { ApiTag } from '../../common/api/swagger/api-tag.enum';
 
 @ApiTags(ApiTag.USERS)
 @Controller('users')

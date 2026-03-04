@@ -6,8 +6,8 @@ import { err, ok, Result } from 'neverthrow';
 import {
   errorMessageContains,
   getErrorMessage,
-} from '../../common/utils/error.util';
-import { buildRedisConnectionFromUrl } from '../../common/utils/redis-connection.util';
+} from '../../common/data/error.util';
+import { buildRedisConnectionFromUrl } from '../../common/queue/redis-connection.util';
 import { EnvSchema } from '../../env/env.schema';
 import { CreateRoomJobDto } from './dtos/create-room-job.dto';
 import {
