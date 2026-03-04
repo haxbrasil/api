@@ -173,6 +173,13 @@ Use the standard response shape:
 - Map MySQL errors to typed domain errors (for example, duplicate key collisions).
 - Use deterministic ordering for pagination (`created_at DESC, id DESC` pattern).
 
+### Database type source of truth
+
+- Keep database row/projection contracts in `src/modules/database/database.d.ts`.
+- Repositories should use these shared row/projection types in `query<T>` / `queryOne<T>`.
+- Do not duplicate row type declarations (`*Row`) inside repositories when they already exist in `database.d.ts`.
+- In `database.d.ts`, keep names concise and domain-oriented (for example, `UserRow`, `RoomRow`) instead of redundant prefixes.
+
 ## Migrations
 
 - Add migrations in `db/migrations` with timestamp-prefixed names.
@@ -186,6 +193,24 @@ Use the standard response shape:
 - Keep reusable pure helpers in module `utils/`.
 - Promote to `src/common/*` only when shared across modules.
 - Avoid “misc” files that mix unrelated helpers.
+
+### Type placement rules
+
+- In non-`types` files, local `type` declarations should stay internal to that file.
+- If a type is exposed by public method signatures (controller/service/repository), move it to a proper `types/` file or to `database.d.ts` for DB row/projection contracts.
+- Avoid alias-only type files that just re-export/rename another type; import the source type directly.
+
+### Utility extraction balance
+
+- Extract helpers when they improve reuse or reduce meaningful duplication.
+- Do not extract one-off service flow/orchestration code into utils only for indirection.
+- Keep service-specific lifecycle/stateful logic (queue/event init, waiting, orchestration flow) in the service unless clearly shared.
+
+### Composable transformation style
+
+- Prefer value-level pure transforms first, then compose them into object/record transforms.
+- When multiple fields require transformation, use one composed multi-field mapper instead of many one-off wrappers.
+- Avoid introducing boilerplate layers that do not reduce complexity.
 
 ## Testing Standards
 
