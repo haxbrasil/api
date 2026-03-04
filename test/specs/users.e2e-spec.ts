@@ -1,12 +1,17 @@
 import { get, json, post, put } from '../support/client';
+import { err } from 'neverthrow';
 import {
   providerUserIdFixture,
+  persistenceErrorFixture,
   tenantFixture,
   DEFAULT_PROVIDER,
   ALTERNATE_PROVIDER,
   userIdentityPath,
   userIdPath,
 } from '../fixtures';
+import { expectApiError } from '../utils/error-assertions.util';
+import { getE2ERuntime } from '../support/runtime';
+import { UsersService } from '../../src/modules/users/users.service';
 
 describe('Users (e2e)', () => {
   it('rejects requests without a bearer token', async () => {
@@ -339,6 +344,17 @@ describe('Users (e2e)', () => {
     );
   });
 
+  it('returns 404 when user by provider identity does not exist', async () => {
+    const tenant = tenantFixture('tenant-get-by-id-missing');
+
+    const response = await get(
+      userIdentityPath(DEFAULT_PROVIDER, providerUserIdFixture()),
+      tenant.token,
+    );
+
+    await expectApiError(response, 404, 'user_not_found', 'User not found');
+  });
+
   it('updates user fields with put', async () => {
     const tenant = tenantFixture('tenant-update');
     const providerUserId = providerUserIdFixture();
@@ -403,6 +419,94 @@ describe('Users (e2e)', () => {
       is_correct: true,
       provider_user_id: providerUserId,
     });
+  });
+
+  it('returns 404 when updating an unknown user id', async () => {
+    const tenant = tenantFixture('tenant-update-missing');
+
+    const response = await put(
+      userIdPath('00000000-0000-4000-8000-000000000000'),
+      {
+        username: 'Unknown',
+      },
+      tenant.token,
+    );
+
+    await expectApiError(response, 404, 'user_not_found', 'User not found');
+  });
+
+  it('returns 404 when updating a user from another tenant', async () => {
+    const tenantA = tenantFixture('tenant-update-cross-a');
+    const tenantB = tenantFixture('tenant-update-cross-b');
+
+    const createResponse = await post(
+      '/users',
+      {
+        provider: DEFAULT_PROVIDER,
+        providerUserId: providerUserIdFixture(),
+        username: 'TenantAOnly',
+      },
+      tenantA.token,
+    );
+    expect(createResponse.status).toBe(201);
+
+    const createdUser = (await json(createResponse)) as { id: string };
+
+    const updateResponse = await put(
+      userIdPath(createdUser.id),
+      {
+        username: 'TenantBCannotUpdate',
+      },
+      tenantB.token,
+    );
+
+    await expectApiError(
+      updateResponse,
+      404,
+      'user_not_found',
+      'User not found',
+    );
+  });
+
+  it('returns 409 when update would duplicate username in same tenant', async () => {
+    const tenant = tenantFixture('tenant-update-dup-username');
+
+    const firstUserResponse = await post(
+      '/users',
+      {
+        provider: DEFAULT_PROVIDER,
+        providerUserId: providerUserIdFixture(),
+        username: 'OriginalName',
+      },
+      tenant.token,
+    );
+    expect(firstUserResponse.status).toBe(201);
+    const secondUserResponse = await post(
+      '/users',
+      {
+        provider: DEFAULT_PROVIDER,
+        providerUserId: providerUserIdFixture(),
+        username: 'TargetName',
+      },
+      tenant.token,
+    );
+    expect(secondUserResponse.status).toBe(201);
+    const secondUser = (await json(secondUserResponse)) as { id: string };
+
+    const response = await put(
+      userIdPath(secondUser.id),
+      {
+        username: 'OriginalName',
+      },
+      tenant.token,
+    );
+
+    await expectApiError(
+      response,
+      409,
+      'user_already_exists',
+      'User already exists',
+    );
   });
 
   it('changes password and confirms credentials', async () => {
@@ -503,6 +607,58 @@ describe('Users (e2e)', () => {
     });
   });
 
+  it('returns false and null provider user id when confirming unknown user id', async () => {
+    const tenant = tenantFixture('tenant-confirm-missing-user');
+
+    const response = await post(
+      `${userIdPath('00000000-0000-4000-8000-000000000000')}/confirm`,
+      {
+        password: 'anything',
+      },
+      tenant.token,
+    );
+
+    expect(response.status).toBe(200);
+    expect(await json(response)).toEqual({
+      is_correct: false,
+      provider_user_id: null,
+    });
+  });
+
+  it('validates update role and password length', async () => {
+    const tenant = tenantFixture('tenant-update-validation');
+
+    const createResponse = await post(
+      '/users',
+      {
+        provider: DEFAULT_PROVIDER,
+        providerUserId: providerUserIdFixture(),
+        username: 'ValidateUpdate',
+      },
+      tenant.token,
+    );
+    expect(createResponse.status).toBe(201);
+    const createdUser = (await json(createResponse)) as { id: string };
+
+    const invalidRoleResponse = await put(
+      userIdPath(createdUser.id),
+      {
+        role: 'owner',
+      },
+      tenant.token,
+    );
+    expect(invalidRoleResponse.status).toBe(400);
+
+    const shortPasswordResponse = await put(
+      userIdPath(createdUser.id),
+      {
+        password: 'abc',
+      },
+      tenant.token,
+    );
+    expect(shortPasswordResponse.status).toBe(400);
+  });
+
   it('validates the create payload', async () => {
     const tenant = tenantFixture('tenant-validate');
 
@@ -516,5 +672,120 @@ describe('Users (e2e)', () => {
       tenant.token,
     );
     expect(response.status).toBe(400);
+  });
+
+  it('validates pageSize query bounds', async () => {
+    const tenant = tenantFixture('tenant-invalid-page-size');
+
+    const response = await get('/users?pageSize=101', tenant.token);
+    expect(response.status).toBe(400);
+  });
+
+  it('maps create persistence failures to 500', async () => {
+    const tenant = tenantFixture('tenant-users-persistence-create');
+    const service = getE2ERuntime().app.get(UsersService);
+    jest
+      .spyOn(service, 'create')
+      .mockResolvedValueOnce(err(persistenceErrorFixture('users')));
+
+    const response = await post(
+      '/users',
+      {
+        provider: DEFAULT_PROVIDER,
+        providerUserId: providerUserIdFixture(),
+        username: 'PersistenceCreate',
+      },
+      tenant.token,
+    );
+
+    await expectApiError(
+      response,
+      500,
+      'persistence_error',
+      'Unexpected error',
+    );
+  });
+
+  it('maps list persistence failures to 500', async () => {
+    const tenant = tenantFixture('tenant-users-persistence-list');
+    const service = getE2ERuntime().app.get(UsersService);
+    jest
+      .spyOn(service, 'list')
+      .mockResolvedValueOnce(err(persistenceErrorFixture('users')));
+
+    const response = await get('/users', tenant.token);
+
+    await expectApiError(
+      response,
+      500,
+      'persistence_error',
+      'Unexpected error',
+    );
+  });
+
+  it('maps get-by-identity persistence failures to 500', async () => {
+    const tenant = tenantFixture('tenant-users-persistence-get');
+    const service = getE2ERuntime().app.get(UsersService);
+    jest
+      .spyOn(service, 'getByIdentity')
+      .mockResolvedValueOnce(err(persistenceErrorFixture('users')));
+
+    const response = await get(
+      userIdentityPath(DEFAULT_PROVIDER, providerUserIdFixture()),
+      tenant.token,
+    );
+
+    await expectApiError(
+      response,
+      500,
+      'persistence_error',
+      'Unexpected error',
+    );
+  });
+
+  it('maps update persistence failures to 500', async () => {
+    const tenant = tenantFixture('tenant-users-persistence-update');
+    const service = getE2ERuntime().app.get(UsersService);
+    jest
+      .spyOn(service, 'update')
+      .mockResolvedValueOnce(err(persistenceErrorFixture('users')));
+
+    const response = await put(
+      userIdPath('00000000-0000-4000-8000-000000000000'),
+      {
+        username: 'WillFail',
+      },
+      tenant.token,
+    );
+
+    await expectApiError(
+      response,
+      500,
+      'persistence_error',
+      'Unexpected error',
+    );
+  });
+
+  it('maps confirm persistence failures to 500', async () => {
+    const tenant = tenantFixture('tenant-users-persistence-confirm');
+    const service = getE2ERuntime().app.get(UsersService);
+    jest
+      .spyOn(service, 'confirm')
+      .mockResolvedValueOnce(err(persistenceErrorFixture('users')));
+
+    const response = await post(
+      `${userIdPath('00000000-0000-4000-8000-000000000000')}/confirm`,
+      {
+        password: 'valid-pass',
+      },
+      tenant.token,
+    );
+
+    await expectApiError(
+      response,
+      500,
+      'persistence_error',
+      'Unexpected error',
+    );
   });
 });

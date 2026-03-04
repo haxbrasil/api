@@ -24,7 +24,9 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "bash ./test/run-e2e.sh",
+    "test:e2e:cov": "JEST_E2E_CONFIG=./test/jest-e2e-coverage.json bash ./test/run-e2e.sh",
     "test:e2e:docker": "bash ./test/run-e2e-docker.sh",
+    "test:e2e:docker:cov": "JEST_E2E_CONFIG=./test/jest-e2e-coverage.json bash ./test/run-e2e-docker.sh",
     "test:e2e:docker:up": "docker compose -f ./docker-compose.e2e.yml up -d",
     "test:e2e:docker:down": "docker compose -f ./docker-compose.e2e.yml down -v"
   },

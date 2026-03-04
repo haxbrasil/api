@@ -8,5 +8,7 @@ set -a
 . "$ROOT_DIR/.env.e2e"
 set +a
 
+JEST_E2E_CONFIG="${JEST_E2E_CONFIG:-./test/jest-e2e.json}"
+
 pnpm exec dbmate --migrations-dir ./db/migrations up
-pnpm exec jest --config ./test/jest-e2e.json --runInBand "$@"
+pnpm exec jest --config "$JEST_E2E_CONFIG" --runInBand "$@"

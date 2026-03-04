@@ -1,5 +1,9 @@
 import { del, get, json, post, put } from '../support/client';
-import { tenantFixture } from '../fixtures';
+import { err } from 'neverthrow';
+import { persistenceErrorFixture, tenantFixture } from '../fixtures';
+import { expectApiError } from '../utils/error-assertions.util';
+import { getE2ERuntime } from '../support/runtime';
+import { RoomsService } from '../../src/modules/rooms/rooms.service';
 
 describe('Rooms (e2e)', () => {
   it('rejects requests without a bearer token', async () => {
@@ -293,5 +297,267 @@ describe('Rooms (e2e)', () => {
 
     const tenantBCrossGet = await get(`/rooms/${roomA.uuid}`, tenantB.token);
     expect(tenantBCrossGet.status).toBe(404);
+  });
+
+  it('returns 404 when room uuid does not exist', async () => {
+    const tenant = tenantFixture('tenant-rooms-missing-get');
+
+    const response = await get(
+      '/rooms/00000000-0000-4000-8000-000000000000',
+      tenant.token,
+    );
+
+    await expectApiError(response, 404, 'room_not_found', 'Room not found');
+  });
+
+  it('returns 404 when updating unknown room uuid', async () => {
+    const tenant = tenantFixture('tenant-rooms-missing-update');
+
+    const response = await put(
+      '/rooms/00000000-0000-4000-8000-000000000000',
+      { name: 'Missing room' },
+      tenant.token,
+    );
+
+    await expectApiError(response, 404, 'room_not_found', 'Room not found');
+  });
+
+  it('returns 404 when deleting a room from another tenant', async () => {
+    const tenantA = tenantFixture('tenant-rooms-cross-delete-a');
+    const tenantB = tenantFixture('tenant-rooms-cross-delete-b');
+
+    const createResponse = await post(
+      '/rooms',
+      {
+        invite: 'TENANTA1',
+        name: 'Tenant A Owned',
+      },
+      tenantA.token,
+    );
+    expect(createResponse.status).toBe(201);
+    const room = (await json(createResponse)) as { uuid: string };
+
+    const response = await del(`/rooms/${room.uuid}`, tenantB.token);
+
+    await expectApiError(response, 404, 'room_not_found', 'Room not found');
+  });
+
+  it('validates geo, include_inactive and page_size query constraints', async () => {
+    const tenant = tenantFixture('tenant-rooms-validation');
+
+    const invalidGeoResponse = await post(
+      '/rooms',
+      {
+        invite: 'GEOINV1',
+        name: 'Invalid Geo Room',
+        geo: {
+          code: 'BRA',
+          lat: -23.55,
+          lon: -46.63,
+        },
+      },
+      tenant.token,
+    );
+    expect(invalidGeoResponse.status).toBe(400);
+
+    const invalidIncludeInactiveResponse = await get(
+      '/rooms?include_inactive=true&include_inactive=false',
+      tenant.token,
+    );
+    expect(invalidIncludeInactiveResponse.status).toBe(400);
+
+    const invalidPageSizeResponse = await get(
+      '/rooms?page_size=101',
+      tenant.token,
+    );
+    expect(invalidPageSizeResponse.status).toBe(400);
+  });
+
+  it('keeps room unchanged when update body is empty', async () => {
+    const tenant = tenantFixture('tenant-rooms-empty-update');
+
+    const createResponse = await post(
+      '/rooms',
+      {
+        invite: 'EMPTYUPD1',
+        name: 'Empty Update',
+        player_name: 'BeforePlayer',
+      },
+      tenant.token,
+    );
+    expect(createResponse.status).toBe(201);
+    const createdRoom = (await json(createResponse)) as {
+      uuid: string;
+      name: string;
+      player_name: string | null;
+    };
+
+    const updateResponse = await put(
+      `/rooms/${createdRoom.uuid}`,
+      {},
+      tenant.token,
+    );
+    expect(updateResponse.status).toBe(200);
+    expect(await json(updateResponse)).toEqual(
+      expect.objectContaining({
+        uuid: createdRoom.uuid,
+        name: createdRoom.name,
+        player_name: createdRoom.player_name,
+      }),
+    );
+  });
+
+  it('persists nullable fields when they are explicitly set to null', async () => {
+    const tenant = tenantFixture('tenant-rooms-nullables');
+
+    const createResponse = await post(
+      '/rooms',
+      {
+        invite: 'NULLABLE1',
+        name: 'Nullable Room',
+        player_name: 'Host',
+        password: 'secret',
+        public: true,
+        max_players: 16,
+        geo: {
+          code: 'BR',
+          lat: -23.55,
+          lon: -46.63,
+        },
+        token: 'token-x',
+        no_player: true,
+      },
+      tenant.token,
+    );
+    expect(createResponse.status).toBe(201);
+    const createdRoom = (await json(createResponse)) as { uuid: string };
+
+    const updateResponse = await put(
+      `/rooms/${createdRoom.uuid}`,
+      {
+        player_name: null,
+        password: null,
+        public: null,
+        max_players: null,
+        geo: null,
+        token: null,
+        no_player: null,
+      },
+      tenant.token,
+    );
+    expect(updateResponse.status).toBe(200);
+    expect(await json(updateResponse)).toEqual(
+      expect.objectContaining({
+        player_name: null,
+        password: null,
+        public: null,
+        max_players: null,
+        geo: null,
+        token: null,
+        no_player: null,
+      }),
+    );
+  });
+
+  it('maps create persistence failures to 500', async () => {
+    const tenant = tenantFixture('tenant-rooms-persistence-create');
+    const service = getE2ERuntime().app.get(RoomsService);
+    jest
+      .spyOn(service, 'create')
+      .mockResolvedValueOnce(err(persistenceErrorFixture('rooms')));
+
+    const response = await post(
+      '/rooms',
+      {
+        invite: 'FAIL001',
+        name: 'Create Fail',
+      },
+      tenant.token,
+    );
+
+    await expectApiError(
+      response,
+      500,
+      'persistence_error',
+      'Unexpected error',
+    );
+  });
+
+  it('maps list persistence failures to 500', async () => {
+    const tenant = tenantFixture('tenant-rooms-persistence-list');
+    const service = getE2ERuntime().app.get(RoomsService);
+    jest
+      .spyOn(service, 'list')
+      .mockResolvedValueOnce(err(persistenceErrorFixture('rooms')));
+
+    const response = await get('/rooms', tenant.token);
+
+    await expectApiError(
+      response,
+      500,
+      'persistence_error',
+      'Unexpected error',
+    );
+  });
+
+  it('maps get-by-id persistence failures to 500', async () => {
+    const tenant = tenantFixture('tenant-rooms-persistence-get');
+    const service = getE2ERuntime().app.get(RoomsService);
+    jest
+      .spyOn(service, 'getById')
+      .mockResolvedValueOnce(err(persistenceErrorFixture('rooms')));
+
+    const response = await get(
+      '/rooms/00000000-0000-4000-8000-000000000000',
+      tenant.token,
+    );
+
+    await expectApiError(
+      response,
+      500,
+      'persistence_error',
+      'Unexpected error',
+    );
+  });
+
+  it('maps update persistence failures to 500', async () => {
+    const tenant = tenantFixture('tenant-rooms-persistence-update');
+    const service = getE2ERuntime().app.get(RoomsService);
+    jest
+      .spyOn(service, 'update')
+      .mockResolvedValueOnce(err(persistenceErrorFixture('rooms')));
+
+    const response = await put(
+      '/rooms/00000000-0000-4000-8000-000000000000',
+      { name: 'Will Fail' },
+      tenant.token,
+    );
+
+    await expectApiError(
+      response,
+      500,
+      'persistence_error',
+      'Unexpected error',
+    );
+  });
+
+  it('maps deactivate persistence failures to 500', async () => {
+    const tenant = tenantFixture('tenant-rooms-persistence-delete');
+    const service = getE2ERuntime().app.get(RoomsService);
+    jest
+      .spyOn(service, 'deactivate')
+      .mockResolvedValueOnce(err(persistenceErrorFixture('rooms')));
+
+    const response = await del(
+      '/rooms/00000000-0000-4000-8000-000000000000',
+      tenant.token,
+    );
+
+    await expectApiError(
+      response,
+      500,
+      'persistence_error',
+      'Unexpected error',
+    );
   });
 });

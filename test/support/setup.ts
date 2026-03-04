@@ -50,3 +50,7 @@ afterAll(async () => {
   await app.close();
   clearE2ERuntime();
 });
+
+afterEach(() => {
+  jest.restoreAllMocks();
+});

@@ -1,12 +1,16 @@
 import { Queue, Worker } from 'bullmq';
+import { err } from 'neverthrow';
 import { buildRedisConnectionFromUrl } from '../../src/common/queue/redis-connection.util';
+import { RoomJobsService } from '../../src/modules/room-jobs/room-jobs.service';
 import {
   ROOM_JOBS_QUEUE,
   RoomJobCompletion,
   RoomJobData,
 } from '../../src/modules/room-jobs/types/room-job.type';
 import { get, json, post } from '../support/client';
-import { tenantFixture } from '../fixtures';
+import { roomJobQueueErrorFixture, tenantFixture } from '../fixtures';
+import { expectApiError } from '../utils/error-assertions.util';
+import { getE2ERuntime } from '../support/runtime';
 
 const REDIS_URL = process.env.REDIS_URL ?? 'redis://127.0.0.1:6380/0';
 
@@ -50,6 +54,14 @@ describe('Room Jobs (e2e)', () => {
             return {
               foo: 'bar',
             } as unknown as RoomJobCompletion;
+          case 'camel-open':
+            return {
+              state: 'open',
+              roomUuid: '00000000-0000-4000-8000-000000000123',
+              invite: 'CAMEL01',
+            };
+          case 'throw-worker':
+            throw new Error('worker exploded');
           case 'timeout':
             await new Promise((resolve) => setTimeout(resolve, 16_000));
             return {
@@ -230,4 +242,133 @@ describe('Room Jobs (e2e)', () => {
       ]),
     );
   }, 15_000);
+
+  it('validates room job payload fields', async () => {
+    const tenant = tenantFixture('tenant-room-jobs-validation');
+
+    const missingPropertiesResponse = await post(
+      '/room-jobs',
+      {
+        room_type: 'open-success',
+      },
+      tenant.token,
+    );
+    expect(missingPropertiesResponse.status).toBe(400);
+
+    const emptyTypeResponse = await post(
+      '/room-jobs',
+      {
+        room_type: '',
+        room_properties: {},
+      },
+      tenant.token,
+    );
+    expect(emptyTypeResponse.status).toBe(400);
+
+    const tooLongTokenResponse = await post(
+      '/room-jobs',
+      {
+        room_type: 'open-success',
+        room_properties: {},
+        token: 'x'.repeat(1025),
+      },
+      tenant.token,
+    );
+    expect(tooLongTokenResponse.status).toBe(400);
+  });
+
+  it('returns 422 when worker throws non-timeout error', async () => {
+    const tenant = tenantFixture('tenant-room-jobs-worker-throw');
+
+    const response = await post(
+      '/room-jobs',
+      {
+        room_type: 'throw-worker',
+        room_properties: {},
+      },
+      tenant.token,
+    );
+
+    expect(response.status).toBe(422);
+    expect(await json(response)).toEqual(
+      expect.objectContaining({
+        state: 'failed',
+        code: 'worker_failed',
+      }),
+    );
+  });
+
+  it('normalizes camelCase roomUuid from worker completion', async () => {
+    const tenant = tenantFixture('tenant-room-jobs-camel');
+
+    const response = await post(
+      '/room-jobs',
+      {
+        room_type: 'camel-open',
+        room_properties: {},
+      },
+      tenant.token,
+    );
+
+    expect(response.status).toBe(200);
+    expect(await json(response)).toEqual(
+      expect.objectContaining({
+        state: 'open',
+        room_uuid: '00000000-0000-4000-8000-000000000123',
+        invite: 'CAMEL01',
+      }),
+    );
+  });
+
+  it('forwards tenant and omits token field when token is not provided', async () => {
+    const tenant = tenantFixture('tenant-room-jobs-forwarding-no-token');
+
+    const response = await post(
+      '/room-jobs',
+      {
+        room_type: 'open-success',
+        room_properties: {
+          room_name: 'No Token Room',
+        },
+      },
+      tenant.token,
+    );
+
+    expect(response.status).toBe(200);
+    expect(receivedJobs).toHaveLength(1);
+    expect(receivedJobs[0]).toEqual(
+      expect.objectContaining({
+        tenant: tenant.tenant,
+        room_type: 'open-success',
+        room_properties: {
+          room_name: 'No Token Room',
+        },
+      }),
+    );
+    expect('token' in receivedJobs[0]).toBe(false);
+  });
+
+  it('maps queue failures to 500 persistence_error', async () => {
+    const tenant = tenantFixture('tenant-room-jobs-persistence');
+    const service = getE2ERuntime().app.get(RoomJobsService);
+    jest
+      .spyOn(service, 'create')
+      .mockResolvedValueOnce(err(roomJobQueueErrorFixture()));
+
+    const response = await post(
+      '/room-jobs',
+      {
+        room_type: 'open-success',
+        room_properties: {},
+      },
+      tenant.token,
+    );
+
+    await expectApiError(
+      response,
+      500,
+      'persistence_error',
+      'Unexpected error',
+    );
+  });
 });

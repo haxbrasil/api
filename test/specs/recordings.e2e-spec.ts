@@ -1,6 +1,16 @@
 import * as recordingCodeUtil from '../../src/modules/recordings/utils/recording-code.util';
+import { err } from 'neverthrow';
+import { FilePersistenceService } from '../../src/modules/file-persistence/file-persistence.service';
+import { RecordingsService } from '../../src/modules/recordings/recordings.service';
 import { get, getNoRedirect, json, postMultipart } from '../support/client';
-import { recordingFixtureBytes, tenantFixture } from '../fixtures';
+import {
+  persistenceErrorFixture,
+  recordingFixtureBytes,
+  recordingFormDataFixture,
+  tenantFixture,
+} from '../fixtures';
+import { expectApiError } from '../utils/error-assertions.util';
+import { getE2ERuntime } from '../support/runtime';
 
 const MAX_RECORDING_SIZE_BYTES = 5 * 1024 * 1024;
 
@@ -260,6 +270,141 @@ describe('Recordings (e2e)', () => {
       expect(redirectB.status).toBe(302);
     } finally {
       codeSpy.mockRestore();
+    }
+  });
+
+  it('rejects upload without recording file even when authenticated', async () => {
+    const tenant = tenantFixture('tenant-recording-no-file');
+
+    const response = await postMultipart('/recs', new FormData(), tenant.token);
+
+    await expectApiError(
+      response,
+      400,
+      'recording_invalid',
+      'Invalid recording file',
+    );
+  });
+
+  it('returns 404 for unknown code in same tenant', async () => {
+    const tenant = tenantFixture('tenant-recording-missing-code');
+
+    const response = await get('/recs/NOPE12', tenant.token);
+
+    await expectApiError(
+      response,
+      404,
+      'recording_not_found',
+      'Recording not found',
+    );
+  });
+
+  it('validates pagination bounds for recordings list', async () => {
+    const tenant = tenantFixture('tenant-recording-list-validation');
+
+    const invalidPageResponse = await get('/recs?page=0', tenant.token);
+    expect(invalidPageResponse.status).toBe(400);
+
+    const invalidPageSizeResponse = await get(
+      '/recs?pageSize=101',
+      tenant.token,
+    );
+    expect(invalidPageSizeResponse.status).toBe(400);
+  });
+
+  it('maps create persistence failures to 500', async () => {
+    const tenant = tenantFixture('tenant-recording-persistence-create');
+    const service = getE2ERuntime().app.get(RecordingsService);
+    jest
+      .spyOn(service, 'create')
+      .mockResolvedValueOnce(err(persistenceErrorFixture('recordings')));
+
+    const response = await postMultipart(
+      '/recs',
+      recordingFormDataFixture(),
+      tenant.token,
+    );
+
+    await expectApiError(
+      response,
+      500,
+      'persistence_error',
+      'Unexpected error',
+    );
+  });
+
+  it('maps list persistence failures to 500', async () => {
+    const tenant = tenantFixture('tenant-recording-persistence-list');
+    const service = getE2ERuntime().app.get(RecordingsService);
+    jest
+      .spyOn(service, 'list')
+      .mockResolvedValueOnce(err(persistenceErrorFixture('recordings')));
+
+    const response = await get('/recs', tenant.token);
+
+    await expectApiError(
+      response,
+      500,
+      'persistence_error',
+      'Unexpected error',
+    );
+  });
+
+  it('maps get-by-code persistence failures to 500', async () => {
+    const tenant = tenantFixture('tenant-recording-persistence-get');
+    const service = getE2ERuntime().app.get(RecordingsService);
+    jest
+      .spyOn(service, 'getByCode')
+      .mockResolvedValueOnce(err(persistenceErrorFixture('recordings')));
+
+    const response = await get('/recs/ABC123', tenant.token);
+
+    await expectApiError(
+      response,
+      500,
+      'persistence_error',
+      'Unexpected error',
+    );
+  });
+
+  it('rolls back inserted row when object upload fails', async () => {
+    const tenant = tenantFixture('tenant-recording-rollback');
+    const codeSpy = jest.spyOn(recordingCodeUtil, 'generateRecordingCode');
+    const filePersistence = getE2ERuntime().app.get(FilePersistenceService);
+    const uploadSpy = jest
+      .spyOn(filePersistence, 'putObject')
+      .mockResolvedValueOnce(
+        err({
+          type: 'file_persistence_error',
+          cause: new Error('forced upload failure'),
+        }),
+      );
+    codeSpy.mockReturnValueOnce('ROLLBK');
+
+    try {
+      const uploadResponse = await postMultipart(
+        '/recs',
+        recordingFormDataFixture(),
+        tenant.token,
+      );
+
+      await expectApiError(
+        uploadResponse,
+        500,
+        'persistence_error',
+        'Unexpected error',
+      );
+
+      const lookupResponse = await get('/recs/ROLLBK', tenant.token);
+      await expectApiError(
+        lookupResponse,
+        404,
+        'recording_not_found',
+        'Recording not found',
+      );
+    } finally {
+      codeSpy.mockRestore();
+      uploadSpy.mockRestore();
     }
   });
 });
