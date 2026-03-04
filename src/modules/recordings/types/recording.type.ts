@@ -1,11 +1,6 @@
-export type Recording = {
-  id: string;
-  tenant: string;
-  code: string;
-  recordingUuid: string;
-  url: string;
-  createdAt: Date;
-};
+import { RecordingRow } from '../../database/database';
+
+export type Recording = RecordingRow;
 
 export type RecordingInputData = {
   tenant: string;

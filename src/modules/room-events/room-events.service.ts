@@ -3,6 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { err, ok, Result } from 'neverthrow';
 import { Page } from '../../common/pagination/types/page.type';
 import { paginate } from '../../common/pagination/utils/page.util';
+import { RoomEventRow } from '../database/database';
 import { PersistenceError } from '../database/database.error';
 import { RoomsRepository } from '../rooms/rooms.repository';
 import { RoomNotFoundError } from '../rooms/rooms.error';
@@ -10,7 +11,7 @@ import { CreateRoomEventDto } from './dtos/create-room-event.dto';
 import { RoomEventsRepository } from './room-events.repository';
 import { CreateRoomEventResult } from './types/room-event-create-result.type';
 import { RoomInactiveError } from './types/room-event-error.type';
-import { RoomEvent } from './types/room-event.type';
+import { RoomEventName } from './types/room-event-name.type';
 
 const DEFERRED_ROOM_EVENT_TTL_MS = 5 * 60 * 1000;
 const DEFERRED_RECONCILE_BATCH_SIZE = 100;
@@ -85,7 +86,12 @@ export class RoomEventsService {
     roomId: string,
     page: number,
     pageSize: number,
-  ): Promise<Result<Page<RoomEvent>, RoomNotFoundError | PersistenceError>> {
+  ): Promise<
+    Result<
+      Page<RoomEventRow<RoomEventName>>,
+      RoomNotFoundError | PersistenceError
+    >
+  > {
     const roomResult = await this.roomsRepo.findById(tenant, roomId);
 
     if (roomResult.isErr()) {

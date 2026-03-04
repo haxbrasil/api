@@ -5,34 +5,14 @@ import { getPageWindow } from '../../common/pagination/utils/page.util';
 import { parseJsonValue } from '../../common/utils/json-value.util';
 import { toJsonSqlColumn } from '../../common/utils/json-sql-column.util';
 import { mapRecordFields } from '../../common/utils/record-field-mapper.util';
+import { DeferredRoomEventRow, RoomEventRow } from '../database/database';
 import { PersistenceError } from '../database/database.error';
 import { DatabaseService } from '../database/database.service';
 import {
   InsertDeferredRoomEventData,
   InsertRoomEventData,
 } from './types/room-events-repository-input.type';
-import { DeferredRoomEvent, RoomEvent } from './types/room-event.type';
 import { RoomEventName } from './types/room-event-name.type';
-
-type RoomEventRow = {
-  id: string;
-  roomUuid: string;
-  eventName: RoomEventName;
-  payload: unknown;
-  occurredAt: Date;
-  createdAt: Date;
-};
-
-type DeferredRoomEventRow = {
-  id: string;
-  tenant: string;
-  roomUuid: string;
-  eventName: RoomEventName;
-  payload: unknown;
-  occurredAt: Date;
-  expiresAt: Date;
-  createdAt: Date;
-};
 
 @Injectable()
 export class RoomEventsRepository {
@@ -40,7 +20,7 @@ export class RoomEventsRepository {
 
   async insertEvent(
     data: InsertRoomEventData,
-  ): Promise<Result<RoomEvent, PersistenceError>> {
+  ): Promise<Result<RoomEventRow<RoomEventName>, PersistenceError>> {
     const insertResult = await this.db.query(sql`
       INSERT INTO room_events (id, room_uuid, event_name, payload, occurred_at)
       VALUES (
@@ -77,8 +57,8 @@ export class RoomEventsRepository {
 
   async findEventById(
     eventId: string,
-  ): Promise<Result<RoomEvent | null, PersistenceError>> {
-    const rowResult = await this.db.queryOne<RoomEventRow>`
+  ): Promise<Result<RoomEventRow<RoomEventName> | null, PersistenceError>> {
+    const rowResult = await this.db.queryOne<RoomEventRow<RoomEventName>>`
       SELECT * FROM room_events
       WHERE id = ${eventId}
     `;
@@ -102,10 +82,10 @@ export class RoomEventsRepository {
     roomUuid: string,
     page: number,
     pageSize: number,
-  ): Promise<Result<RoomEvent[], PersistenceError>> {
+  ): Promise<Result<RoomEventRow<RoomEventName>[], PersistenceError>> {
     const { limitPlusOne, offset } = getPageWindow(page, pageSize);
 
-    const rowsResult = await this.db.query<RoomEventRow>`
+    const rowsResult = await this.db.query<RoomEventRow<RoomEventName>>`
       SELECT * FROM room_events
       WHERE room_uuid = ${roomUuid}
       ORDER BY occurred_at DESC, id DESC
@@ -128,7 +108,7 @@ export class RoomEventsRepository {
 
   async insertDeferredEvent(
     data: InsertDeferredRoomEventData,
-  ): Promise<Result<DeferredRoomEvent, PersistenceError>> {
+  ): Promise<Result<DeferredRoomEventRow<RoomEventName>, PersistenceError>> {
     const insertResult = await this.db.query(sql`
       INSERT INTO deferred_room_events (
         id,
@@ -175,8 +155,12 @@ export class RoomEventsRepository {
 
   async findDeferredById(
     deferredId: string,
-  ): Promise<Result<DeferredRoomEvent | null, PersistenceError>> {
-    const rowResult = await this.db.queryOne<DeferredRoomEventRow>`
+  ): Promise<
+    Result<DeferredRoomEventRow<RoomEventName> | null, PersistenceError>
+  > {
+    const rowResult = await this.db.queryOne<
+      DeferredRoomEventRow<RoomEventName>
+    >`
       SELECT * FROM deferred_room_events
       WHERE id = ${deferredId}
     `;
@@ -199,8 +183,8 @@ export class RoomEventsRepository {
   async listPendingDeferredEvents(
     now: Date,
     limit: number,
-  ): Promise<Result<DeferredRoomEvent[], PersistenceError>> {
-    const rowsResult = await this.db.query<DeferredRoomEventRow>`
+  ): Promise<Result<DeferredRoomEventRow<RoomEventName>[], PersistenceError>> {
+    const rowsResult = await this.db.query<DeferredRoomEventRow<RoomEventName>>`
       SELECT * FROM deferred_room_events
       WHERE expires_at > ${now}
       ORDER BY created_at ASC, id ASC

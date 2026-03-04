@@ -1,7 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
-import { RoomEvent } from '../types/room-event.type';
+import { RoomEventRow } from '../../database/database';
 import { ROOM_EVENT_NAMES } from '../types/room-event-name.type';
+import { RoomEventName } from '../types/room-event-name.type';
 
 export class RoomEventResponseDto {
   @ApiProperty({ name: 'uuid' })
@@ -26,7 +27,7 @@ export class RoomEventResponseDto {
   @Expose({ name: 'created_at' })
   createdAt: Date;
 
-  constructor(event: RoomEvent) {
+  constructor(event: RoomEventRow<RoomEventName>) {
     this.uuid = event.id;
     this.roomUuid = event.roomUuid;
     this.eventName = event.eventName;

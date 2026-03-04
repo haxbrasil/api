@@ -4,6 +4,7 @@ import { tryDecode, validate } from '@hax-brasil/replay-decoder';
 import { err, ok, Result } from 'neverthrow';
 import { Page } from '../../common/pagination/types/page.type';
 import { paginate } from '../../common/pagination/utils/page.util';
+import { RecordingCodeRow } from '../database/database';
 import { FilePersistenceError } from '../file-persistence/file-persistence.error';
 import { FilePersistenceService } from '../file-persistence/file-persistence.service';
 import { PersistenceError } from '../database/database.error';
@@ -13,7 +14,6 @@ import {
   RecordingNotFoundError,
 } from './types/recording-error.type';
 import { RecordingsRepository } from './recordings.repository';
-import { RecordingCode } from './types/recording-code.type';
 import { Recording } from './types/recording.type';
 import { generateRecordingCode } from './utils/recording-code.util';
 import { buildRecordingStorageKey } from './utils/recording-storage-key.util';
@@ -120,7 +120,7 @@ export class RecordingsService {
     tenant: string,
     page: number,
     pageSize: number,
-  ): Promise<Result<Page<RecordingCode>, PersistenceError>> {
+  ): Promise<Result<Page<RecordingCodeRow>, PersistenceError>> {
     return await this.repo
       .listCodes(tenant, page, pageSize)
       .then((result) => result.map((rows) => paginate(rows, page, pageSize)));

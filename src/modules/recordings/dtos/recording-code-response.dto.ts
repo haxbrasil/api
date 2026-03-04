@@ -1,11 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { RecordingCode } from '../types/recording-code.type';
+import { RecordingCodeRow } from '../../database/database';
 
 export class RecordingCodeResponseDto {
   @ApiProperty({ example: 'A1B2C3' })
   code: string;
 
-  constructor(recording: RecordingCode) {
+  constructor(recording: RecordingCodeRow) {
     this.code = recording.code;
   }
 }

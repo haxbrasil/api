@@ -5,27 +5,11 @@ import { getPageWindow } from '../../common/pagination/utils/page.util';
 import { toBoolean, toNullableBoolean } from '../../common/utils/boolean.util';
 import { toNullableJsonSqlColumn } from '../../common/utils/json-sql-column.util';
 import { mapRecordFields } from '../../common/utils/record-field-mapper.util';
+import { RoomRow } from '../database/database';
 import { PersistenceError } from '../database/database.error';
 import { DatabaseService } from '../database/database.service';
 import { parseRoomGeo } from './utils/room-mapping.util';
 import { Room, RoomInputData, RoomUpdateData } from './types/room.type';
-
-type RoomRow = {
-  id: string;
-  tenant: string;
-  invite: string;
-  name: string;
-  playerName: string | null;
-  password: string | null;
-  public: boolean | number | null;
-  maxPlayers: number | null;
-  geo: unknown;
-  token: string | null;
-  noPlayer: boolean | number | null;
-  active: boolean | number;
-  inactivatedAt: Date | null;
-  createdAt: Date;
-};
 
 @Injectable()
 export class RoomsRepository {

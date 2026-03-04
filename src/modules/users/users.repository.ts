@@ -3,12 +3,11 @@ import { err, ok, Result } from 'neverthrow';
 import sql, { join, Sql } from 'sql-template-tag';
 import { MysqlError } from '../../common/errors/mysql-error.enum';
 import { getPageWindow } from '../../common/pagination/utils/page.util';
+import { UserPublicRow, UserCredentialsRow } from '../database/database';
 import { DatabaseService } from '../database/database.service';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { UpdateUserDto } from './dtos/update-user.dto';
 import { UserAlreadyExistsError } from './users.error';
-import { UserCredentials } from './types/user-credentials.type';
-import { User } from './types/user.type';
 import { PersistenceError } from '../database/database.error';
 
 @Injectable()
@@ -20,20 +19,22 @@ export class UsersRepository {
     page: number,
     pageSize: number,
     username?: string,
-  ): Promise<Result<User[], PersistenceError>> {
+  ): Promise<Result<UserPublicRow[], PersistenceError>> {
     const { limitPlusOne, offset } = getPageWindow(page, pageSize);
 
     return username
-      ? await this.db.query<User>`
-          SELECT * FROM users
+      ? await this.db.query<UserPublicRow>`
+          SELECT id, tenant, provider, provider_user_id, username, role, created_at
+          FROM users
           WHERE tenant = ${tenant}
           AND username = ${username}
           ORDER BY created_at DESC, id DESC
           LIMIT ${limitPlusOne}
           OFFSET ${offset}
         `
-      : await this.db.query<User>`
-          SELECT * FROM users
+      : await this.db.query<UserPublicRow>`
+          SELECT id, tenant, provider, provider_user_id, username, role, created_at
+          FROM users
           WHERE tenant = ${tenant}
           ORDER BY created_at DESC, id DESC
           LIMIT ${limitPlusOne}
@@ -45,9 +46,10 @@ export class UsersRepository {
     provider: string,
     providerUserId: string,
     tenant: string,
-  ): Promise<Result<User | null, PersistenceError>> {
-    return await this.db.queryOne<User>`
-      SELECT * FROM users
+  ): Promise<Result<UserPublicRow | null, PersistenceError>> {
+    return await this.db.queryOne<UserPublicRow>`
+      SELECT id, tenant, provider, provider_user_id, username, role, created_at
+      FROM users
       WHERE tenant = ${tenant}
       AND provider = ${provider}
       AND provider_user_id = ${providerUserId}
@@ -57,9 +59,10 @@ export class UsersRepository {
   async findById(
     userId: string,
     tenant: string,
-  ): Promise<Result<User | null, PersistenceError>> {
-    return await this.db.queryOne<User>`
-      SELECT * FROM users
+  ): Promise<Result<UserPublicRow | null, PersistenceError>> {
+    return await this.db.queryOne<UserPublicRow>`
+      SELECT id, tenant, provider, provider_user_id, username, role, created_at
+      FROM users
       WHERE tenant = ${tenant}
       AND id = ${userId}
     `;
@@ -68,8 +71,8 @@ export class UsersRepository {
   async findCredentialsById(
     userId: string,
     tenant: string,
-  ): Promise<Result<UserCredentials | null, PersistenceError>> {
-    return await this.db.queryOne<UserCredentials>`
+  ): Promise<Result<UserCredentialsRow | null, PersistenceError>> {
+    return await this.db.queryOne<UserCredentialsRow>`
       SELECT provider_user_id, password FROM users
       WHERE tenant = ${tenant}
       AND id = ${userId}

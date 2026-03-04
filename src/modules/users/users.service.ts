@@ -3,6 +3,7 @@ import { err, ok, Result } from 'neverthrow';
 import { ok as assert } from 'node:assert/strict';
 import { Page } from '../../common/pagination/types/page.type';
 import { paginate } from '../../common/pagination/utils/page.util';
+import { UserPublicRow } from '../database/database';
 import { PersistenceError } from '../database/database.error';
 import { ConfirmUserDto } from './dtos/confirm-user.dto';
 import { CreateUserDto } from './dtos/create-user.dto';
@@ -10,7 +11,6 @@ import { ListUsersQueryDto } from './dtos/list-users-query.dto';
 import { UpdateUserDto } from './dtos/update-user.dto';
 import { ConfirmationResult } from './types/confirmation-result.type';
 import { UserAlreadyExistsError, UserNotFoundError } from './users.error';
-import { User } from './types/user.type';
 import { UsersRepository } from './users.repository';
 
 @Injectable()
@@ -20,7 +20,7 @@ export class UsersService {
   async create(
     dto: CreateUserDto,
     tenant: string,
-  ): Promise<Result<User, UserAlreadyExistsError | PersistenceError>> {
+  ): Promise<Result<UserPublicRow, UserAlreadyExistsError | PersistenceError>> {
     const insertResult = await this.repo.insertUser(dto, tenant);
 
     if (insertResult.isErr()) {
@@ -45,7 +45,7 @@ export class UsersService {
   async list(
     tenant: string,
     query: ListUsersQueryDto,
-  ): Promise<Result<Page<User>, PersistenceError>> {
+  ): Promise<Result<Page<UserPublicRow>, PersistenceError>> {
     return await this.repo
       .find(tenant, query.page, query.pageSize, query.username)
       .then((res) =>
@@ -57,7 +57,7 @@ export class UsersService {
     provider: string,
     providerUserId: string,
     tenant: string,
-  ): Promise<Result<User, UserNotFoundError | PersistenceError>> {
+  ): Promise<Result<UserPublicRow, UserNotFoundError | PersistenceError>> {
     const userResult = await this.repo.findByIdentity(
       provider,
       providerUserId,
@@ -84,7 +84,10 @@ export class UsersService {
     dto: UpdateUserDto,
     tenant: string,
   ): Promise<
-    Result<User, UserNotFoundError | UserAlreadyExistsError | PersistenceError>
+    Result<
+      UserPublicRow,
+      UserNotFoundError | UserAlreadyExistsError | PersistenceError
+    >
   > {
     const existingUserResult = await this.repo.findById(userId, tenant);
 

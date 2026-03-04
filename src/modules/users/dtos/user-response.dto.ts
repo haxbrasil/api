@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
+import { UserPublicRow } from '../../database/database';
 import { USER_ROLES, UserRole } from '../types/user-role.type';
-import { User } from '../types/user.type';
 
 export class UserResponseDto {
   @ApiProperty()
@@ -24,7 +24,7 @@ export class UserResponseDto {
   @Expose({ name: 'created_at' })
   createdAt: Date;
 
-  constructor(user: User) {
+  constructor(user: UserPublicRow) {
     this.id = user.id;
     this.provider = user.provider;
     this.providerUserId = user.providerUserId;

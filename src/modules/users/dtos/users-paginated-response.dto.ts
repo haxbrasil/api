@@ -1,8 +1,8 @@
 import { PaginationDto } from '../../../common/pagination/dtos/pagination.dto';
-import { User } from '../types/user.type';
+import { UserPublicRow } from '../../database/database';
 import { UserResponseDto } from './user-response.dto';
 
 export class UsersPaginatedResponseDto extends PaginationDto(
   UserResponseDto,
-  (user: User) => new UserResponseDto(user),
+  (user: UserPublicRow) => new UserResponseDto(user),
 ) {}

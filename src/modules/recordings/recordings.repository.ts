@@ -3,10 +3,10 @@ import { err, ok, Result } from 'neverthrow';
 import { ok as assert } from 'node:assert/strict';
 import { MysqlError } from '../../common/errors/mysql-error.enum';
 import { getPageWindow } from '../../common/pagination/utils/page.util';
+import { RecordingCodeRow, RecordingRow } from '../database/database';
 import { PersistenceError } from '../database/database.error';
 import { DatabaseService } from '../database/database.service';
 import { RecordingCodeCollisionError } from './types/recording-error.type';
-import { RecordingCode } from './types/recording-code.type';
 import { RecordingInputData, Recording } from './types/recording.type';
 
 @Injectable()
@@ -54,7 +54,7 @@ export class RecordingsRepository {
     tenant: string,
     code: string,
   ): Promise<Result<Recording | null, PersistenceError>> {
-    return await this.db.queryOne<Recording>`
+    return await this.db.queryOne<RecordingRow>`
       SELECT * FROM recordings
       WHERE tenant = ${tenant}
       AND code = ${code}
@@ -65,10 +65,10 @@ export class RecordingsRepository {
     tenant: string,
     page: number,
     pageSize: number,
-  ): Promise<Result<RecordingCode[], PersistenceError>> {
+  ): Promise<Result<RecordingCodeRow[], PersistenceError>> {
     const { limitPlusOne, offset } = getPageWindow(page, pageSize);
 
-    return await this.db.query<RecordingCode>`
+    return await this.db.query<RecordingCodeRow>`
       SELECT code FROM recordings
       WHERE tenant = ${tenant}
       ORDER BY created_at DESC, id DESC

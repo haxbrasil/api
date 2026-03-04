@@ -1,11 +1,12 @@
-import { DeferredRoomEvent, RoomEvent } from './room-event.type';
+import { DeferredRoomEventRow, RoomEventRow } from '../../database/database';
+import { RoomEventName } from './room-event-name.type';
 
 export type CreateRoomEventResult =
   | {
       state: 'created';
-      event: RoomEvent;
+      event: RoomEventRow<RoomEventName>;
     }
   | {
       state: 'deferred';
-      event: DeferredRoomEvent;
+      event: DeferredRoomEventRow<RoomEventName>;
     };
