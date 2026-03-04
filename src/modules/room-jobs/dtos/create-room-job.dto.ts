@@ -2,7 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsDefined, IsOptional, IsString, Length } from 'class-validator';
 
 export class CreateRoomJobDto {
-  @ApiProperty({ name: 'room_type', example: 'headless' })
+  @ApiProperty({ name: 'room_type', example: 'futsal-3v3' })
   @IsString()
   @Length(1, 100)
   room_type!: string;
