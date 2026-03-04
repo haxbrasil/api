@@ -19,7 +19,7 @@ export class CreateRoomDto {
   @Length(1, 255)
   invite!: string;
 
-  @ApiProperty({ minLength: 1, maxLength: 150, example: 'BFL Room #1' })
+  @ApiProperty({ minLength: 1, maxLength: 150, example: 'Hax Brasil Room #1' })
   @IsString()
   @Length(1, 150)
   name!: string;

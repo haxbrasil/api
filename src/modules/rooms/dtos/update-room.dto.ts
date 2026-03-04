@@ -20,7 +20,11 @@ export class UpdateRoomDto {
   @Length(1, 255)
   invite?: string;
 
-  @ApiPropertyOptional({ minLength: 1, maxLength: 150, example: 'BFL Room #1' })
+  @ApiPropertyOptional({
+    minLength: 1,
+    maxLength: 150,
+    example: 'Hax Brasil Room #1',
+  })
   @IsOptional()
   @IsString()
   @Length(1, 150)

@@ -3,7 +3,11 @@ import { IsBoolean, IsOptional, IsString, Length } from 'class-validator';
 import { SnakePagePaginationQueryDto } from '../../../common/pagination/dtos/snake-page-pagination-query.dto';
 
 export class ListRoomsQueryDto extends SnakePagePaginationQueryDto {
-  @ApiPropertyOptional({ minLength: 1, maxLength: 150, example: 'BFL' })
+  @ApiPropertyOptional({
+    minLength: 1,
+    maxLength: 150,
+    example: 'Hax Brasil Room #1',
+  })
   @IsOptional()
   @IsString()
   @Length(1, 150)
