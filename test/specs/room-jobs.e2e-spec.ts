@@ -1,0 +1,233 @@
+import { Queue, Worker } from 'bullmq';
+import { buildRedisConnectionFromUrl } from '../../src/common/utils/redis-connection.util';
+import {
+  ROOM_JOBS_QUEUE,
+  RoomJobCompletion,
+  RoomJobData,
+} from '../../src/modules/room-jobs/types/room-job.type';
+import { get, json, post } from '../support/client';
+import { tenantFixture } from '../fixtures';
+
+const REDIS_URL = process.env.REDIS_URL ?? 'redis://127.0.0.1:6380/0';
+
+describe('Room Jobs (e2e)', () => {
+  const connection = buildRedisConnectionFromUrl(REDIS_URL);
+  const receivedJobs: RoomJobData[] = [];
+
+  let queue: Queue<RoomJobData, RoomJobCompletion>;
+  let worker: Worker<RoomJobData, RoomJobCompletion>;
+
+  beforeAll(async () => {
+    queue = new Queue<RoomJobData, RoomJobCompletion>(ROOM_JOBS_QUEUE, {
+      connection,
+    });
+    await queue.waitUntilReady();
+
+    worker = new Worker<RoomJobData, RoomJobCompletion>(
+      ROOM_JOBS_QUEUE,
+      async (job) => {
+        receivedJobs.push(job.data);
+
+        switch (job.data.room_type) {
+          case 'open-success':
+            return {
+              state: 'open',
+              room_uuid: '00000000-0000-4000-8000-000000000010',
+              invite: 'OPEN123',
+            };
+          case 'token-invalid':
+            return {
+              state: 'failed',
+              code: 'token_invalid',
+              message: 'Invalid headless token',
+            };
+          case 'token-not-provided':
+            return {
+              state: 'failed',
+              code: 'token_not_provided',
+            };
+          case 'malformed':
+            return {
+              foo: 'bar',
+            } as unknown as RoomJobCompletion;
+          case 'timeout':
+            await new Promise((resolve) => setTimeout(resolve, 16_000));
+            return {
+              state: 'open',
+              room_uuid: '00000000-0000-4000-8000-000000000099',
+            };
+          default:
+            return {
+              state: 'open',
+            };
+        }
+      },
+      {
+        connection,
+        concurrency: 4,
+      },
+    );
+
+    await worker.waitUntilReady();
+  });
+
+  beforeEach(async () => {
+    receivedJobs.length = 0;
+    await queue.drain();
+  });
+
+  afterAll(async () => {
+    await worker.close();
+    await queue.close();
+  });
+
+  it('rejects requests without a bearer token', async () => {
+    const response = await post('/room-jobs', {
+      room_type: 'open-success',
+      room_properties: {},
+    });
+
+    expect(response.status).toBe(401);
+
+    const getResponse = await get('/room-jobs');
+    expect(getResponse.status).toBe(404);
+  });
+
+  it('returns 200 when worker completes with open state', async () => {
+    const tenant = tenantFixture('tenant-room-jobs-open');
+
+    const response = await post(
+      '/room-jobs',
+      {
+        room_type: 'open-success',
+        room_properties: {
+          mode: 'ranked',
+        },
+      },
+      tenant.token,
+    );
+
+    expect(response.status).toBe(200);
+    const payload = (await json(response)) as Record<string, unknown>;
+    expect(payload).toMatchObject({
+      state: 'open',
+      room_uuid: '00000000-0000-4000-8000-000000000010',
+      invite: 'OPEN123',
+    });
+    expect(payload).toHaveProperty('job_id', expect.any(String));
+  });
+
+  it('returns 422 when worker reports token_invalid', async () => {
+    const tenant = tenantFixture('tenant-room-jobs-token-invalid');
+
+    const response = await post(
+      '/room-jobs',
+      {
+        room_type: 'token-invalid',
+        room_properties: {},
+        token: 'bad-token',
+      },
+      tenant.token,
+    );
+
+    expect(response.status).toBe(422);
+    const payload = (await json(response)) as Record<string, unknown>;
+    expect(payload).toMatchObject({
+      state: 'failed',
+      code: 'token_invalid',
+    });
+    expect(payload).toHaveProperty('job_id', expect.any(String));
+  });
+
+  it('returns 422 when worker reports token_not_provided', async () => {
+    const tenant = tenantFixture('tenant-room-jobs-token-missing');
+
+    const response = await post(
+      '/room-jobs',
+      {
+        room_type: 'token-not-provided',
+        room_properties: {},
+      },
+      tenant.token,
+    );
+
+    expect(response.status).toBe(422);
+    expect(await json(response)).toEqual(
+      expect.objectContaining({
+        state: 'failed',
+        code: 'token_not_provided',
+      }),
+    );
+  });
+
+  it('returns 422 with deterministic code for invalid completion payload', async () => {
+    const tenant = tenantFixture('tenant-room-jobs-malformed');
+
+    const response = await post(
+      '/room-jobs',
+      {
+        room_type: 'malformed',
+        room_properties: {},
+      },
+      tenant.token,
+    );
+
+    expect(response.status).toBe(422);
+    expect(await json(response)).toEqual(
+      expect.objectContaining({
+        state: 'failed',
+        code: 'invalid_completion_payload',
+      }),
+    );
+  });
+
+  it('returns 202 when completion does not arrive within 15 seconds', async () => {
+    const tenant = tenantFixture('tenant-room-jobs-timeout');
+
+    const response = await post(
+      '/room-jobs',
+      {
+        room_type: 'timeout',
+        room_properties: {},
+      },
+      tenant.token,
+    );
+
+    expect(response.status).toBe(202);
+    const payload = (await json(response)) as Record<string, unknown>;
+    expect(payload).toMatchObject({
+      state: 'pending',
+    });
+    expect(payload).toHaveProperty('job_id', expect.any(String));
+  }, 25_000);
+
+  it('forwards tenant and optional token to BullMQ job payload', async () => {
+    const tenant = tenantFixture('tenant-room-jobs-forwarding');
+
+    const response = await post(
+      '/room-jobs',
+      {
+        room_type: 'open-success',
+        room_properties: {
+          room_name: 'BFL Test Room',
+        },
+        token: 'headless-token-123',
+      },
+      tenant.token,
+    );
+
+    expect(response.status).toBe(200);
+    expect(receivedJobs).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          tenant: tenant.tenant,
+          room_type: 'open-success',
+          token: 'headless-token-123',
+          room_properties: {
+            room_name: 'BFL Test Room',
+          },
+        }),
+      ]),
+    );
+  }, 15_000);
+});

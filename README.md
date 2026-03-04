@@ -35,6 +35,7 @@ Set env vars (at least):
 - `FILE_STORAGE_RECS_BUCKET`
 - `FILE_STORAGE_RECS_PUBLIC_BASE_URL`
 - `FILE_STORAGE_FORCE_PATH_STYLE` (optional; useful for MinIO/local S3)
+- `REDIS_URL`
 
 ## Run
 

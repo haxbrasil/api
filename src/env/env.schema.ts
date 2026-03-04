@@ -77,6 +77,10 @@ export class EnvSchema {
   @IsOptional()
   @IsBoolean()
   FILE_STORAGE_FORCE_PATH_STYLE: boolean = false;
+
+  @IsString()
+  @IsNotEmpty()
+  REDIS_URL!: string;
 }
 
 export function validateEnv(config: Record<string, unknown>): EnvSchema {

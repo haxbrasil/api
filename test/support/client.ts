@@ -64,6 +64,14 @@ export async function put(
   });
 }
 
+export async function del(path: string, token?: string): Promise<Response> {
+  const { baseUrl } = getE2ERuntime();
+  return fetch(`${baseUrl}${resolvePath(path)}`, {
+    method: 'DELETE',
+    headers: authHeaders(token),
+  });
+}
+
 export async function postMultipart(
   path: string,
   payload: FormData,

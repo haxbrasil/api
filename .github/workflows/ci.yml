@@ -53,6 +53,7 @@ jobs:
           FILE_STORAGE_SECRET_ACCESS_KEY: ci-secret
           FILE_STORAGE_RECS_BUCKET: ci-recs
           FILE_STORAGE_RECS_PUBLIC_BASE_URL: http://localhost:9000/ci-recs
+          REDIS_URL: redis://127.0.0.1:6379/0
 
       - name: Unit tests
         run: pnpm exec jest --passWithNoTests

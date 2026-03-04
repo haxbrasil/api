@@ -4,4 +4,6 @@ export enum ApiError {
   USER_NOT_FOUND = 'user_not_found',
   RECORDING_INVALID = 'recording_invalid',
   RECORDING_NOT_FOUND = 'recording_not_found',
+  ROOM_NOT_FOUND = 'room_not_found',
+  ROOM_INACTIVE = 'room_inactive',
 }

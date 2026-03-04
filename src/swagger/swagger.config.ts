@@ -21,5 +21,11 @@ export function buildSwaggerConfig() {
       'Endpoints related to user management and authentication',
     )
     .addTag(ApiTag.RECORDINGS, 'Endpoints related to recording management')
+    .addTag(
+      ApiTag.ROOMS,
+      'Endpoints related to room registration and lifecycle',
+    )
+    .addTag(ApiTag.ROOM_EVENTS, 'Endpoints related to room event ingestion')
+    .addTag(ApiTag.ROOM_JOBS, 'Endpoints related to room opening jobs')
     .build();
 }

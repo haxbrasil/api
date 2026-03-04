@@ -28,6 +28,14 @@ export const API_ERRORS = {
     code: ApiError.RECORDING_NOT_FOUND,
     message: 'Recording not found',
   },
+  ROOM_NOT_FOUND: {
+    code: ApiError.ROOM_NOT_FOUND,
+    message: 'Room not found',
+  },
+  ROOM_INACTIVE: {
+    code: ApiError.ROOM_INACTIVE,
+    message: 'Room is inactive',
+  },
 } as const satisfies Record<string, ApiErrorDescriptor>;
 
 export function apiErrorPayload(error: ApiErrorDescriptor): {

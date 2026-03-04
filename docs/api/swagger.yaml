@@ -432,6 +432,452 @@ paths:
                   - message
       summary: Redirect to recording URL
       tags: *a2
+  /rooms:
+    post:
+      description: Registers a room as active for the authenticated tenant.
+      operationId: RoomsController_create
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRoomDto'
+      responses:
+        '201':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoomResponseDto'
+        '500':
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: persistence_error
+                  message:
+                    type: string
+                    example: Unexpected error
+                required:
+                  - code
+                  - message
+      summary: Create room
+      tags: &a3
+        - 🏟️ Rooms
+    get:
+      description:
+        Lists rooms with pagination, optional name filter, and optional
+        inclusion of inactive rooms.
+      operationId: RoomsController_list
+      parameters:
+        - name: page
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            default: 1
+            example: 1
+            type: number
+        - name: page_size
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            maximum: 100
+            default: 20
+            example: 20
+            type: number
+        - name: name
+          required: false
+          in: query
+          schema:
+            minLength: 1
+            maxLength: 150
+            example: BFL
+            type: string
+        - name: include_inactive
+          required: false
+          in: query
+          schema:
+            default: false
+            type: boolean
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoomsPaginatedResponseDto'
+        '500':
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: persistence_error
+                  message:
+                    type: string
+                    example: Unexpected error
+                required:
+                  - code
+                  - message
+      summary: List rooms
+      tags: *a3
+  /rooms/{uuid}:
+    get:
+      description: Fetches one room by uuid for the authenticated tenant.
+      operationId: RoomsController_getById
+      parameters:
+        - name: uuid
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoomResponseDto'
+        '404':
+          description: Room not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: room_not_found
+                  message:
+                    type: string
+                    example: Room not found
+                required:
+                  - code
+                  - message
+        '500':
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: persistence_error
+                  message:
+                    type: string
+                    example: Unexpected error
+                required:
+                  - code
+                  - message
+      summary: Get room
+      tags: *a3
+    put:
+      description: Updates room fields. Only active rooms can be edited.
+      operationId: RoomsController_update
+      parameters:
+        - name: uuid
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRoomDto'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoomResponseDto'
+        '404':
+          description: Room not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: room_not_found
+                  message:
+                    type: string
+                    example: Room not found
+                required:
+                  - code
+                  - message
+        '409':
+          description: Room is inactive
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: room_inactive
+                  message:
+                    type: string
+                    example: Room is inactive
+                required:
+                  - code
+                  - message
+        '500':
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: persistence_error
+                  message:
+                    type: string
+                    example: Unexpected error
+                required:
+                  - code
+                  - message
+      summary: Update room
+      tags: *a3
+    delete:
+      description: Marks a room as inactive. Operation is idempotent.
+      operationId: RoomsController_deactivate
+      parameters:
+        - name: uuid
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Room deactivated.
+        '404':
+          description: Room not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: room_not_found
+                  message:
+                    type: string
+                    example: Room not found
+                required:
+                  - code
+                  - message
+        '500':
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: persistence_error
+                  message:
+                    type: string
+                    example: Unexpected error
+                required:
+                  - code
+                  - message
+      summary: Deactivate room
+      tags: *a3
+  /rooms/events:
+    post:
+      description:
+        Stores a room event for an active room or defers it until the room
+        appears.
+      operationId: RoomEventsController_create
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRoomEventDto'
+      responses:
+        '201':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoomEventResponseDto'
+        '202':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeferredRoomEventResponseDto'
+        '409':
+          description: Room is inactive
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: room_inactive
+                  message:
+                    type: string
+                    example: Room is inactive
+                required:
+                  - code
+                  - message
+        '500':
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: persistence_error
+                  message:
+                    type: string
+                    example: Unexpected error
+                required:
+                  - code
+                  - message
+      summary: Create room event
+      tags: &a4
+        - 📡 Room Events
+  /rooms/{uuid}/events:
+    get:
+      description: Lists room events for a room uuid with pagination.
+      operationId: RoomEventsController_listByRoom
+      parameters:
+        - name: uuid
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: page
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            default: 1
+            example: 1
+            type: number
+        - name: page_size
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            maximum: 100
+            default: 20
+            example: 20
+            type: number
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoomEventsPaginatedResponseDto'
+        '404':
+          description: Room not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: room_not_found
+                  message:
+                    type: string
+                    example: Room not found
+                required:
+                  - code
+                  - message
+        '500':
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: persistence_error
+                  message:
+                    type: string
+                    example: Unexpected error
+                required:
+                  - code
+                  - message
+      summary: List room events
+      tags: *a4
+  /room-jobs:
+    post:
+      description: Enqueues a room opening job and waits up to 15 seconds for completion.
+      operationId: RoomJobsController_create
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRoomJobDto'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoomJobOpenResponseDto'
+        '202':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoomJobPendingResponseDto'
+        '422':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoomJobFailedResponseDto'
+        '500':
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: persistence_error
+                  message:
+                    type: string
+                    example: Unexpected error
+                required:
+                  - code
+                  - message
+      summary: Request room opening
+      tags:
+        - 🧰 Room Jobs
 info:
   title: Hax Brasil API
   description: ''
@@ -442,6 +888,12 @@ tags:
     description: Endpoints related to user management and authentication
   - name: 📽️ Recordings
     description: Endpoints related to recording management
+  - name: 🏟️ Rooms
+    description: Endpoints related to room registration and lifecycle
+  - name: 📡 Room Events
+    description: Endpoints related to room event ingestion
+  - name: 🧰 Room Jobs
+    description: Endpoints related to room opening jobs
 servers: []
 components:
   securitySchemes:
@@ -471,7 +923,7 @@ components:
           maxLength: 20
         role:
           type: string
-          enum: &a3
+          enum: &a5
             - admin
             - mod
             - default
@@ -493,7 +945,7 @@ components:
           type: string
         role:
           type: string
-          enum: *a3
+          enum: *a5
         created_at:
           type: string
           format: date-time
@@ -544,7 +996,7 @@ components:
           maxLength: 20
         role:
           type: string
-          enum: *a3
+          enum: *a5
           example: mod
     ConfirmUserDto:
       type: object
@@ -607,5 +1059,374 @@ components:
       required:
         - items
         - page_info
+    RoomGeoDto:
+      type: object
+      properties:
+        code:
+          type: string
+          example: BR
+          minLength: 2
+          maxLength: 2
+        lat:
+          type: number
+          example: -23.55
+        lon:
+          type: number
+          example: -46.63
+      required:
+        - code
+        - lat
+        - lon
+    CreateRoomDto:
+      type: object
+      properties:
+        invite:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: DDWvwykDyiI
+        name:
+          type: string
+          minLength: 1
+          maxLength: 150
+          example: 'BFL Room #1'
+        player_name:
+          type: string
+          nullable: true
+          minLength: 1
+          maxLength: 100
+        password:
+          type: string
+          nullable: true
+          minLength: 1
+          maxLength: 255
+        public:
+          type: boolean
+          nullable: true
+        max_players:
+          type: number
+          nullable: true
+          minimum: 1
+          maximum: 30
+        geo:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/RoomGeoDto'
+        token:
+          type: string
+          nullable: true
+          minLength: 1
+          maxLength: 1024
+        no_player:
+          type: boolean
+          nullable: true
+      required:
+        - invite
+        - name
+    RoomResponseDto:
+      type: object
+      properties:
+        uuid:
+          type: string
+        invite:
+          type: string
+        name:
+          type: string
+        player_name:
+          type: string
+          nullable: true
+        password:
+          type: string
+          nullable: true
+        public:
+          type: boolean
+          nullable: true
+        max_players:
+          type: number
+          nullable: true
+        geo:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/RoomGeoDto'
+        token:
+          type: string
+          nullable: true
+        no_player:
+          type: boolean
+          nullable: true
+        active:
+          type: boolean
+        inactivated_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+      required:
+        - uuid
+        - invite
+        - name
+        - active
+        - created_at
+    RoomListItemResponseDto:
+      type: object
+      properties:
+        uuid:
+          type: string
+        invite:
+          type: string
+        name:
+          type: string
+        player_name:
+          type: string
+          nullable: true
+        public:
+          type: boolean
+          nullable: true
+        max_players:
+          type: number
+          nullable: true
+        geo:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/RoomGeoDto'
+        no_player:
+          type: boolean
+          nullable: true
+        active:
+          type: boolean
+        inactivated_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+      required:
+        - uuid
+        - invite
+        - name
+        - active
+        - created_at
+    RoomsPaginatedResponseDto:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoomListItemResponseDto'
+        page_info:
+          $ref: '#/components/schemas/PageInfoDto'
+      required:
+        - items
+        - page_info
+    UpdateRoomDto:
+      type: object
+      properties:
+        invite:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: DDWvwykDyiI
+        name:
+          type: string
+          minLength: 1
+          maxLength: 150
+          example: 'BFL Room #1'
+        player_name:
+          type: string
+          nullable: true
+          minLength: 1
+          maxLength: 100
+        password:
+          type: string
+          nullable: true
+          minLength: 1
+          maxLength: 255
+        public:
+          type: boolean
+          nullable: true
+        max_players:
+          type: number
+          nullable: true
+          minimum: 1
+          maximum: 30
+        geo:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/RoomGeoDto'
+        token:
+          type: string
+          nullable: true
+          minLength: 1
+          maxLength: 1024
+        no_player:
+          type: boolean
+          nullable: true
+    CreateRoomEventDto:
+      type: object
+      properties:
+        room_uuid:
+          type: string
+          format: uuid
+        event_name:
+          type: string
+          enum: &a6
+            - onPlayerJoin
+            - onPlayerLeave
+            - onTeamVictory
+            - onPlayerChat
+            - onPlayerBallKick
+            - onTeamGoal
+            - onGameStart
+            - onGameStop
+            - onPlayerAdminChange
+            - onPlayerTeamChange
+            - onPlayerKicked
+            - onGamePause
+            - onGameUnpause
+            - onPositionsReset
+            - onPlayerActivity
+            - onStadiumChange
+            - onRoomLink
+            - onKickRateLimitSet
+            - onTeamsLockChange
+        timestamp:
+          type: string
+          format: date-time
+          example: 2026-03-04T11:00:00.000Z
+        payload:
+          type: object
+          description: Raw event payload from room process.
+      required:
+        - room_uuid
+        - event_name
+        - timestamp
+        - payload
+    RoomEventResponseDto:
+      type: object
+      properties:
+        uuid:
+          type: string
+        room_uuid:
+          type: string
+          format: uuid
+        event_name:
+          type: string
+          enum: *a6
+        payload:
+          type: object
+        timestamp:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+      required:
+        - uuid
+        - room_uuid
+        - event_name
+        - payload
+        - timestamp
+        - created_at
+    DeferredRoomEventResponseDto:
+      type: object
+      properties:
+        state:
+          type: string
+          example: deferred
+        room_uuid:
+          type: string
+          format: uuid
+        event_name:
+          type: string
+          enum: *a6
+        timestamp:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+      required:
+        - state
+        - room_uuid
+        - event_name
+        - timestamp
+        - expires_at
+    RoomEventsPaginatedResponseDto:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoomEventResponseDto'
+        page_info:
+          $ref: '#/components/schemas/PageInfoDto'
+      required:
+        - items
+        - page_info
+    CreateRoomJobDto:
+      type: object
+      properties:
+        room_type:
+          type: string
+          example: headless
+        room_properties:
+          type: object
+        token:
+          type: string
+          nullable: true
+          minLength: 1
+          maxLength: 1024
+      required:
+        - room_type
+        - room_properties
+    RoomJobOpenResponseDto:
+      type: object
+      properties:
+        state:
+          type: string
+          example: open
+        job_id:
+          type: string
+        room_uuid:
+          type: string
+          format: uuid
+        invite:
+          type: string
+      required:
+        - state
+        - job_id
+    RoomJobPendingResponseDto:
+      type: object
+      properties:
+        state:
+          type: string
+          example: pending
+        job_id:
+          type: string
+      required:
+        - state
+        - job_id
+    RoomJobFailedResponseDto:
+      type: object
+      properties:
+        state:
+          type: string
+          example: failed
+        job_id:
+          type: string
+        code:
+          type: string
+          example: token_invalid
+          description: Failure code from worker completion payload or internal
+            compatibility mapping.
+        message:
+          type: string
+      required:
+        - state
+        - job_id
+        - code
 security:
   - bearer: []

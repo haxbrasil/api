@@ -35,3 +35,13 @@ services:
         until mc alias set local http://minio-e2e:9000 minioadmin minioadmin; do sleep 1; done
         mc mb --ignore-existing local/haxbrasil-e2e
         mc anonymous set download local/haxbrasil-e2e
+
+  redis-e2e:
+    image: redis:7-alpine
+    ports:
+      - '6380:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 2s
+      timeout: 3s
+      retries: 30
