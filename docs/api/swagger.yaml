@@ -498,7 +498,7 @@ paths:
           schema:
             minLength: 1
             maxLength: 150
-            example: BFL
+            example: 'Hax Brasil Room #1'
             type: string
         - name: include_inactive
           required: false
@@ -1089,7 +1089,7 @@ components:
           type: string
           minLength: 1
           maxLength: 150
-          example: 'BFL Room #1'
+          example: 'Hax Brasil Room #1'
         player_name:
           type: string
           nullable: true
@@ -1233,7 +1233,7 @@ components:
           type: string
           minLength: 1
           maxLength: 150
-          example: 'BFL Room #1'
+          example: 'Hax Brasil Room #1'
         player_name:
           type: string
           nullable: true
@@ -1371,7 +1371,7 @@ components:
       properties:
         room_type:
           type: string
-          example: headless
+          example: futsal-3v3
         room_properties:
           type: object
         token:
