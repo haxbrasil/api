@@ -79,3 +79,7 @@ For non-trivial features, discuss with maintainers before starting.
 - Review code, not authors.
 - Be specific, constructive, and respectful.
 - Maintainers make final merge decisions.
+
+## License
+
+By submitting code, documentation, or other contributions to this project, you agree that your contribution is licensed under the Creator Commercial License (CCL) v1.0 and that the creator receives the commercial rights described in the license.
