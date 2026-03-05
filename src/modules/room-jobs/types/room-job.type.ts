@@ -25,21 +25,21 @@ export type RoomJobCompletion = RoomJobOpenCompletion | RoomJobFailedCompletion;
 
 export type RoomJobOpenHttpResult = {
   state: 'open';
-  job_id: string;
-  room_uuid?: string;
+  jobId: string;
+  roomUuid?: string;
   invite?: string;
 };
 
 export type RoomJobFailedHttpResult = {
   state: 'failed';
-  job_id: string;
+  jobId: string;
   code: string;
   message?: string;
 };
 
 export type RoomJobPendingHttpResult = {
   state: 'pending';
-  job_id: string;
+  jobId: string;
 };
 
 export type RoomJobHttpResult =

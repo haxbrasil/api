@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Expose } from 'class-transformer';
 import { RoomJobOpenHttpResult } from '../types/room-job.type';
 
 export class RoomJobOpenResponseDto {
@@ -6,18 +7,20 @@ export class RoomJobOpenResponseDto {
   state: 'open';
 
   @ApiProperty({ name: 'job_id' })
-  job_id: string;
+  @Expose({ name: 'job_id' })
+  jobId: string;
 
   @ApiPropertyOptional({ name: 'room_uuid', format: 'uuid' })
-  room_uuid?: string;
+  @Expose({ name: 'room_uuid' })
+  roomUuid?: string;
 
   @ApiPropertyOptional()
   invite?: string;
 
   constructor(value: RoomJobOpenHttpResult) {
     this.state = 'open';
-    this.job_id = value.job_id;
-    this.room_uuid = value.room_uuid;
+    this.jobId = value.jobId;
+    this.roomUuid = value.roomUuid;
     this.invite = value.invite;
   }
 }

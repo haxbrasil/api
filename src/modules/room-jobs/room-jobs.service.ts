@@ -100,13 +100,13 @@ export class RoomJobsService implements OnModuleDestroy {
     if (errorMessageContains(error, 'timed out')) {
       return {
         state: 'pending',
-        job_id: jobId,
+        jobId,
       };
     }
 
     return {
       state: 'failed',
-      job_id: jobId,
+      jobId,
       code: 'worker_failed',
       message: getErrorMessage(error, 'Unexpected worker failure'),
     };

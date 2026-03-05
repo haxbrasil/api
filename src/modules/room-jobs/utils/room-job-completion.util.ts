@@ -55,7 +55,7 @@ export function toRoomJobHttpResult(
   if (!parsed) {
     return {
       state: 'failed',
-      job_id: jobId,
+      jobId,
       code: 'invalid_completion_payload',
     };
   }
@@ -63,7 +63,7 @@ export function toRoomJobHttpResult(
   if (parsed.state === 'failed') {
     return {
       state: 'failed',
-      job_id: jobId,
+      jobId,
       code: parsed.code,
       message: parsed.message,
     };
@@ -71,8 +71,8 @@ export function toRoomJobHttpResult(
 
   return {
     state: 'open',
-    job_id: jobId,
-    room_uuid: parsed.room_uuid ?? parsed.roomUuid,
+    jobId,
+    roomUuid: parsed.room_uuid ?? parsed.roomUuid,
     invite: parsed.invite,
   };
 }

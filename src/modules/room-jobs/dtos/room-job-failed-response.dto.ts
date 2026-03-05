@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Expose } from 'class-transformer';
 import { RoomJobFailedHttpResult } from '../types/room-job.type';
 
 export class RoomJobFailedResponseDto {
@@ -6,7 +7,8 @@ export class RoomJobFailedResponseDto {
   state: 'failed';
 
   @ApiProperty({ name: 'job_id' })
-  job_id: string;
+  @Expose({ name: 'job_id' })
+  jobId: string;
 
   @ApiProperty({
     example: 'token_invalid',
@@ -20,7 +22,7 @@ export class RoomJobFailedResponseDto {
 
   constructor(value: RoomJobFailedHttpResult) {
     this.state = 'failed';
-    this.job_id = value.job_id;
+    this.jobId = value.jobId;
     this.code = value.code;
     this.message = value.message;
   }
