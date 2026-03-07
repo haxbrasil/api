@@ -117,6 +117,13 @@ export class RoomsService {
       return err(updateResult.error);
     }
 
+    if (!updateResult.value) {
+      return err({
+        type: 'room_inactive',
+        roomId,
+      });
+    }
+
     const updatedRoomResult = await this.repo.findById(tenant, roomId);
 
     if (updatedRoomResult.isErr()) {

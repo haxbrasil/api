@@ -1,5 +1,6 @@
 import { Inject, Injectable, OnModuleDestroy } from '@nestjs/common';
 import { err, ok, Result } from 'neverthrow';
+import { ResultSetHeader } from 'mysql2';
 import { Pool } from 'mysql2/promise';
 import sql, { Sql } from 'sql-template-tag';
 import { SnakeCasedProperties } from '../../common/persistence/types/case-conversion.type';
@@ -50,6 +51,19 @@ export class DatabaseService implements OnModuleDestroy {
     return ok(rowsResult.value[0] ?? null);
   }
 
+  async queryAffecting(q: Sql): Promise<Result<number, PersistenceError>>;
+  async queryAffecting(
+    strings: TemplateStringsArray,
+    ...values: unknown[]
+  ): Promise<Result<number, PersistenceError>>;
+  async queryAffecting(
+    q: Sql | TemplateStringsArray,
+    ...values: unknown[]
+  ): Promise<Result<number, PersistenceError>> {
+    const statement = this.toSql(q, values);
+    return this.executeAffecting(statement);
+  }
+
   private toSql(q: Sql | TemplateStringsArray, values: unknown[]): Sql {
     if (this.isTemplateStringsArray(q)) {
       return sql(q, ...values);
@@ -91,5 +105,39 @@ export class DatabaseService implements OnModuleDestroy {
         code,
       });
     }
+  }
+
+  private async executeAffecting(
+    statement: Sql,
+  ): Promise<Result<number, PersistenceError>> {
+    try {
+      const [result] = await this.pool.query(statement.text, statement.values);
+
+      if (this.isResultSetHeader(result)) {
+        return ok(result.affectedRows);
+      }
+
+      return ok(0);
+    } catch (error: unknown) {
+      const code =
+        typeof error === 'object' && error !== null && 'code' in error
+          ? (error as { code?: string }).code
+          : undefined;
+
+      return err({
+        type: 'persistence_error',
+        cause: error,
+        code,
+      });
+    }
+  }
+
+  private isResultSetHeader(value: unknown): value is ResultSetHeader {
+    return (
+      typeof value === 'object' &&
+      value !== null &&
+      'affectedRows' in value &&
+      typeof (value as { affectedRows?: unknown }).affectedRows === 'number'
+    );
   }
 }

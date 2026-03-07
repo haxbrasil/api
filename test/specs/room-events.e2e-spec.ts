@@ -3,12 +3,14 @@ import { Logger } from '@nestjs/common';
 import { err } from 'neverthrow';
 import { DatabaseService } from '../../src/modules/database/database.service';
 import { DeferredRoomEventsScheduler } from '../../src/modules/room-events/deferred-room-events.scheduler';
+import { RoomEventsRepository } from '../../src/modules/room-events/room-events.repository';
 import { RoomEventsService } from '../../src/modules/room-events/room-events.service';
 import { del, get, json, post } from '../support/client';
 import { persistenceErrorFixture, tenantFixture } from '../fixtures';
 import { expectApiError } from '../utils/error-assertions.util';
 import { getE2ERuntime } from '../support/runtime';
 import { insertRoomDirectly } from '../utils/rooms-db.util';
+import { createDeferred } from '../utils/deferred.util';
 
 describe('Room Events (e2e)', () => {
   it('rejects requests without a bearer token', async () => {
@@ -153,6 +155,62 @@ describe('Room Events (e2e)', () => {
       tenant.token,
     );
 
+    expect(eventResponse.status).toBe(409);
+    expect(await json(eventResponse)).toEqual({
+      code: 'room_inactive',
+      message: 'Room is inactive',
+    });
+  });
+
+  it('rejects event creation when room is deactivated between active check and insert', async () => {
+    const tenant = tenantFixture('tenant-room-events-inactive-race');
+
+    const createRoomResponse = await post(
+      '/rooms',
+      {
+        invite: 'RACEEVT1',
+        name: 'Race Events Room',
+      },
+      tenant.token,
+    );
+    expect(createRoomResponse.status).toBe(201);
+    const room = (await json(createRoomResponse)) as { uuid: string };
+
+    const repo = getE2ERuntime().app.get(RoomEventsRepository);
+    type InsertEvent = RoomEventsRepository['insertEvent'];
+    const originalInsertEvent = repo.insertEvent.bind(repo) as InsertEvent;
+    const insertReached = createDeferred();
+    const releaseInsert = createDeferred();
+
+    jest
+      .spyOn(repo, 'insertEvent')
+      .mockImplementation(
+        async (...args: Parameters<InsertEvent>): ReturnType<InsertEvent> => {
+          insertReached.resolve();
+          await releaseInsert.promise;
+          return originalInsertEvent(...args);
+        },
+      );
+
+    const eventPromise = post(
+      '/rooms/events',
+      {
+        room_uuid: room.uuid,
+        event_name: 'onPlayerJoin',
+        timestamp: new Date().toISOString(),
+        payload: { player_id: 66 },
+      },
+      tenant.token,
+    );
+
+    await insertReached.promise;
+
+    const deactivateResponse = await del(`/rooms/${room.uuid}`, tenant.token);
+    expect(deactivateResponse.status).toBe(204);
+
+    releaseInsert.resolve();
+
+    const eventResponse = await eventPromise;
     expect(eventResponse.status).toBe(409);
     expect(await json(eventResponse)).toEqual({
       code: 'room_inactive',

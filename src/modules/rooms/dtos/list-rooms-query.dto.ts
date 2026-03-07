@@ -1,5 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsBoolean, IsOptional, IsString, Length } from 'class-validator';
+import { TransformBooleanQueryParam } from '../../../common/api/decorators/boolean-query-param.decorator';
 import { SnakePagePaginationQueryDto } from '../../../common/api/pagination/dtos/snake-page-pagination-query.dto';
 
 export class ListRoomsQueryDto extends SnakePagePaginationQueryDto {
@@ -15,6 +16,7 @@ export class ListRoomsQueryDto extends SnakePagePaginationQueryDto {
 
   @ApiPropertyOptional({ name: 'include_inactive', default: false })
   @IsOptional()
+  @TransformBooleanQueryParam()
   @IsBoolean()
   include_inactive: boolean = false;
 }

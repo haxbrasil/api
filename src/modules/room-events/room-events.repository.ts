@@ -20,20 +20,27 @@ export class RoomEventsRepository {
 
   async insertEvent(
     data: InsertRoomEventData,
-  ): Promise<Result<RoomEventRow<RoomEventName>, PersistenceError>> {
-    const insertResult = await this.db.query(sql`
+  ): Promise<Result<RoomEventRow<RoomEventName> | null, PersistenceError>> {
+    const insertResult = await this.db.queryAffecting`
       INSERT INTO room_events (id, room_uuid, event_name, payload, occurred_at)
-      VALUES (
+      SELECT
         ${data.id},
-        ${data.roomUuid},
+        id,
         ${data.eventName},
         ${toJsonSqlColumn(data.payload)},
         ${data.occurredAt}
-      )
-    `);
+      FROM rooms
+      WHERE id = ${data.roomUuid}
+      AND tenant = ${data.tenant}
+      AND active = TRUE
+    `;
 
     if (insertResult.isErr()) {
       return err(insertResult.error);
+    }
+
+    if (insertResult.value === 0) {
+      return ok(null);
     }
 
     const eventResult = await this.findEventById(data.id);

@@ -4,6 +4,8 @@ import { persistenceErrorFixture, tenantFixture } from '../fixtures';
 import { expectApiError } from '../utils/error-assertions.util';
 import { getE2ERuntime } from '../support/runtime';
 import { RoomsService } from '../../src/modules/rooms/rooms.service';
+import { RoomsRepository } from '../../src/modules/rooms/rooms.repository';
+import { createDeferred } from '../utils/deferred.util';
 
 describe('Rooms (e2e)', () => {
   it('rejects requests without a bearer token', async () => {
@@ -299,6 +301,32 @@ describe('Rooms (e2e)', () => {
     expect(tenantBCrossGet.status).toBe(404);
   });
 
+  it('does not include inactive rooms when include_inactive=false', async () => {
+    const tenant = tenantFixture('tenant-rooms-include-inactive-false');
+
+    const createResponse = await post(
+      '/rooms',
+      {
+        invite: 'INACFALSE',
+        name: 'Inactive False',
+      },
+      tenant.token,
+    );
+    expect(createResponse.status).toBe(201);
+    const room = (await json(createResponse)) as { uuid: string };
+
+    const deactivateResponse = await del(`/rooms/${room.uuid}`, tenant.token);
+    expect(deactivateResponse.status).toBe(204);
+
+    const response = await get('/rooms?include_inactive=false', tenant.token);
+    expect(response.status).toBe(200);
+    expect(await json(response)).toEqual(
+      expect.objectContaining({
+        items: [],
+      }),
+    );
+  });
+
   it('returns 404 when room uuid does not exist', async () => {
     const tenant = tenantFixture('tenant-rooms-missing-get');
 
@@ -405,6 +433,60 @@ describe('Rooms (e2e)', () => {
         player_name: createdRoom.player_name,
       }),
     );
+  });
+
+  it('rejects update when room is deactivated between active check and write', async () => {
+    const tenant = tenantFixture('tenant-rooms-update-race');
+
+    const createResponse = await post(
+      '/rooms',
+      {
+        invite: 'RACEUPD1',
+        name: 'Race Update',
+      },
+      tenant.token,
+    );
+    expect(createResponse.status).toBe(201);
+    const createdRoom = (await json(createResponse)) as { uuid: string };
+
+    const repo = getE2ERuntime().app.get(RoomsRepository);
+    type UpdateById = RoomsRepository['updateById'];
+    const originalUpdateById = repo.updateById.bind(repo) as UpdateById;
+    const updateReached = createDeferred();
+    const releaseUpdate = createDeferred();
+
+    jest
+      .spyOn(repo, 'updateById')
+      .mockImplementation(
+        async (...args: Parameters<UpdateById>): ReturnType<UpdateById> => {
+          updateReached.resolve();
+          await releaseUpdate.promise;
+          return originalUpdateById(...args);
+        },
+      );
+
+    const updatePromise = put(
+      `/rooms/${createdRoom.uuid}`,
+      { name: 'Race Updated' },
+      tenant.token,
+    );
+
+    await updateReached.promise;
+
+    const deactivateResponse = await del(
+      `/rooms/${createdRoom.uuid}`,
+      tenant.token,
+    );
+    expect(deactivateResponse.status).toBe(204);
+
+    releaseUpdate.resolve();
+
+    const updateResponse = await updatePromise;
+    expect(updateResponse.status).toBe(409);
+    expect(await json(updateResponse)).toEqual({
+      code: 'room_inactive',
+      message: 'Room is inactive',
+    });
   });
 
   it('persists nullable fields when they are explicitly set to null', async () => {

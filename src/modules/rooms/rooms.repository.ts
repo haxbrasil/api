@@ -142,7 +142,7 @@ export class RoomsRepository {
     tenant: string,
     roomId: string,
     input: RoomUpdateData,
-  ): Promise<Result<void, PersistenceError>> {
+  ): Promise<Result<boolean, PersistenceError>> {
     const changes: Sql[] = [];
 
     if (input.invite !== undefined) {
@@ -182,21 +182,22 @@ export class RoomsRepository {
     }
 
     if (changes.length === 0) {
-      return ok();
+      return ok(true);
     }
 
-    const updateResult = await this.db.query(sql`
+    const updateResult = await this.db.queryAffecting`
       UPDATE rooms
       SET ${join(changes, ', ')}
       WHERE tenant = ${tenant}
       AND id = ${roomId}
-    `);
+      AND active = TRUE
+    `;
 
     if (updateResult.isErr()) {
       return err(updateResult.error);
     }
 
-    return ok();
+    return ok(updateResult.value > 0);
   }
 
   async deactivateById(

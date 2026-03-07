@@ -65,6 +65,7 @@ export class RoomEventsService {
 
     const createResult = await this.roomEventsRepo.insertEvent({
       id: crypto.randomUUID(),
+      tenant,
       roomUuid: input.room_uuid,
       eventName: input.event_name,
       payload: input.payload,
@@ -73,6 +74,13 @@ export class RoomEventsService {
 
     if (createResult.isErr()) {
       return err(createResult.error);
+    }
+
+    if (!createResult.value) {
+      return err({
+        type: 'room_inactive',
+        roomId: input.room_uuid,
+      });
     }
 
     return ok({
@@ -145,6 +153,7 @@ export class RoomEventsService {
 
       const createEventResult = await this.roomEventsRepo.insertEvent({
         id: crypto.randomUUID(),
+        tenant: deferredEvent.tenant,
         roomUuid: deferredEvent.roomUuid,
         eventName: deferredEvent.eventName,
         payload: deferredEvent.payload,
@@ -153,6 +162,10 @@ export class RoomEventsService {
 
       if (createEventResult.isErr()) {
         return err(createEventResult.error);
+      }
+
+      if (!createEventResult.value) {
+        continue;
       }
 
       const deleteDeferredResult = await this.roomEventsRepo.deleteDeferredById(
